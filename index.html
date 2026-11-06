@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>시간의 도화지 — Artist's Desk & Time Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -89,6 +90,11 @@
     .border-black-ring {
       border: 2.5px solid #18181b !important;
       box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5), 0 3px 8px rgba(0, 0, 0, 0.28);
+    }
+
+    .border-none-ring {
+      border: 1px solid rgba(28, 25, 23, 0.14) !important;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.10);
     }
 
     /* 진짜 원형의 화가의 팔레트 (Wood / Ceramic Atelier Palette) */
@@ -352,6 +358,9 @@
                 📝 세부사항 적기
               </button>
             </div>
+            <button onclick="exportDailyGridToExcel()" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs transition flex items-center gap-1 cursor-pointer" title="오늘의 시간 그리드 도화지와 세부사항을 엑셀(.xlsx) 파일로 추출합니다">
+              <span>📊</span><span>엑셀 추출</span>
+            </button>
             <button onclick="clearDayGrid()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-500 border border-stone-200 transition cursor-pointer">
               비우기
             </button>
@@ -448,10 +457,13 @@
             <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">Monthly Mosaic · 1 Cell = 1 Hour (6 Slots Aggregated)</span>
             <h2 class="serif-title text-xl font-bold text-stone-900 mt-0.5">월간 시간 모자이크</h2>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="shiftMonth(-1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300">◀ 이전 달</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="shiftMonth(-1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300 cursor-pointer">◀ 이전 달</button>
             <span id="month-view-title" class="font-mono text-sm font-extrabold text-stone-900 px-3.5 py-1 bg-amber-50 rounded-full border border-amber-200">2026년 11월</span>
-            <button onclick="shiftMonth(1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300">다음 달 ▶</button>
+            <button onclick="shiftMonth(1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300 cursor-pointer">다음 달 ▶</button>
+            <button onclick="exportMonthlyMosaicToExcel()" class="px-3.5 py-1 rounded-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs border border-emerald-800 shadow-xs transition flex items-center gap-1.5 cursor-pointer" title="이 달의 월간 시간 모자이크와 일자별 세부사항·통계를 엑셀(.xlsx) 파일로 추출합니다">
+              <span>📊</span><span>엑셀 추출</span>
+            </button>
           </div>
         </div>
 
@@ -475,10 +487,13 @@
             <h2 class="serif-title text-xl font-bold text-stone-900 mt-0.5">연간 365일 기억의 화폭</h2>
             <p class="text-xs text-stone-500 mt-0.5">황금색 테두리(긍정) 칸이 많을수록 찬란한 황금빛으로, 검은색 테두리(부정) 칸이 많을수록 짙은 먹색으로 기억됩니다.</p>
           </div>
-          <div class="flex items-center gap-2">
-            <button onclick="shiftYear(-1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300">◀ 이전 해</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="shiftYear(-1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300 cursor-pointer">◀ 이전 해</button>
             <span id="year-view-title" class="font-mono text-sm font-extrabold text-stone-900 px-3.5 py-1 bg-amber-50 rounded-full border border-amber-200">2026년 (365칸)</span>
-            <button onclick="shiftYear(1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300">다음 해 ▶</button>
+            <button onclick="shiftYear(1)" class="px-3 py-1 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-300 cursor-pointer">다음 해 ▶</button>
+            <button onclick="exportYearlyMemoryToExcel()" class="px-3.5 py-1 rounded-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs border border-emerald-800 shadow-xs transition flex items-center gap-1.5 cursor-pointer" title="이 해의 연간 365일 기억의 화폭과 월별·물감별 통계를 엑셀(.xlsx) 파일로 추출합니다">
+              <span>📊</span><span>엑셀 추출</span>
+            </button>
           </div>
         </div>
 
@@ -518,6 +533,9 @@
             </select>
             <button onclick="togglePulseWave()" id="btn-pulse-wave" class="px-2.5 py-1 rounded-lg bg-white hover:bg-stone-200 text-stone-700 border border-stone-300 font-bold text-xs transition cursor-pointer">✨ 숨결 파동</button>
             <button onclick="toggleGoldenShine()" id="btn-golden-shine" class="px-2.5 py-1 rounded-lg bg-white hover:bg-amber-100 text-stone-800 border border-amber-300 font-bold text-xs transition cursor-pointer">🌟 빛나기</button>
+            <button onclick="exportLifeNetworkToExcel()" class="px-3 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs border border-emerald-800 shadow-xs transition flex items-center gap-1 cursor-pointer" title="일생의 뿌리와 줄기 네트워크(3개월 분기 잎사귀 전체 및 연령대별 통계)를 엑셀(.xlsx) 파일로 추출합니다">
+              <span>📊</span><span>엑셀 추출</span>
+            </button>
           </div>
         </div>
 
@@ -561,9 +579,9 @@
         <kbd class="hidden sm:inline-block text-[10px] bg-stone-900/20 px-1.5 py-0.5 rounded-full font-mono">P</kbd>
       </button>
 
-      <!-- 현재 붓에 묻은 물감 표시 (클릭 시 팔레트 오픈) -->
-      <div onclick="toggleArtistPalette()" class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700/90 border border-stone-600 cursor-pointer transition" title="클릭하여 원형 팔레트 열기">
-        <span id="dock-paint-dot" class="w-5 h-5 rounded-full shrink-0 border-gold-ring" style="background:#f59e0b;"></span>
+      <!-- 현재 붓에 묻은 물감 표시 (클릭 시 붓 테두리 순환: 테두리 없음 ➔ 반대색 테두리 ➔ 원래 테두리, 팔레트에 등록된 원본 테두리는 불변) -->
+      <div onclick="cycleDockBrushBorder()" class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700/90 border border-stone-600 cursor-pointer transition select-none" title="클릭할 때마다 현재 붓의 테두리가 [테두리 없음 ➔ 반대색 테두리 ➔ 원래 테두리] 순으로 바뀝니다 (팔레트에 등록된 원래 테두리 색상은 변하지 않음)">
+        <span id="dock-paint-dot" class="w-5 h-5 rounded-full shrink-0 border-gold-ring transition-all" style="background:#f59e0b;"></span>
         <div class="leading-tight pr-1">
           <div class="flex items-center gap-1">
             <span id="dock-paint-star" class="text-amber-400 text-[11px]">★</span>
@@ -653,8 +671,8 @@
             <span onclick="openEditActivePaintMixer()" id="center-paint-title" class="text-xs sm:text-sm font-extrabold text-stone-900 max-w-[115px] truncate cursor-pointer hover:underline" title="클릭하여 이 물감 수정">깊은 몰입</span>
           </div>
 
-          <!-- 선택된 물감의 테두리(긍정=황금 / 부정=검정) 즉시 스위치 -->
-          <div class="grid grid-cols-2 gap-1 bg-stone-200/80 p-1 rounded-full text-[10px] font-bold">
+          <!-- 선택된 물감의 테두리(긍정=황금 / 부정=검정 / 미선택=테두리 없음) 스위치 -->
+          <div class="grid grid-cols-2 gap-1 bg-stone-200/80 p-1 rounded-full text-[10px] font-bold" title="선택된 버튼을 다시 누르면 테두리가 해제됩니다">
             <button onclick="setActivePaintBorderType('gold')" id="center-border-gold-btn" class="py-1 rounded-full bg-stone-900 text-amber-300 shadow-2xs transition cursor-pointer">
               ✨ 황금테두리(긍정)
             </button>
@@ -706,12 +724,12 @@
             </div>
           </div>
 
-          <!-- 테두리 기준 선택: 황금색 테두리(긍정) vs 검은색 테두리(부정) -->
-          <div class="grid grid-cols-2 gap-1 text-[10px]">
-            <button type="button" onclick="setNewPaintBorderType('gold')" id="btn-new-border-gold" class="py-1 px-1.5 rounded-lg font-bold border-2 border-amber-400 bg-amber-50 text-amber-950 text-center cursor-pointer">
+          <!-- 테두리 기준 선택: 황금색 테두리(긍정) vs 검은색 테두리(부정) vs 미선택(테두리 없음) -->
+          <div class="grid grid-cols-2 gap-1 text-[10px]" title="둘 다 선택하지 않거나 선택된 버튼을 다시 누르면 테두리 없는 물감이 됩니다">
+            <button type="button" onclick="toggleNewPaintBorderType('gold')" id="btn-new-border-gold" class="py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer">
               ✨ 황금테두리(긍정)
             </button>
-            <button type="button" onclick="setNewPaintBorderType('black')" id="btn-new-border-black" class="py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer">
+            <button type="button" onclick="toggleNewPaintBorderType('black')" id="btn-new-border-black" class="py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer">
               ⬛ 검은테두리(부정)
             </button>
           </div>
@@ -891,11 +909,13 @@
       dailyPaintsByDate: {},
 
       activePaintId: 'fix_focus',
+      brushBorderCycleStep: 0,    // 0: 원래 테두리, 1: 테두리 없음(또는 1단계), 2: 반대색 테두리
+      activeBrushBorderType: 'gold', // 현재 붓에 적용 중인 테두리 ('gold' | 'black' | 'none') — 팔레트 원본과 독립
       isEraserMode: false,
 
       // 새 물감 조색 & 기존 물감 수정 폼 상태
       editingPaintId: null,       // null이면 새 물감 추가, 문자열이면 해당 ID 물감 수정
-      newPaintBorderType: 'gold', // 'gold' | 'black'
+      newPaintBorderType: 'none', // 'gold' | 'black' | 'none'
       newPaintIsFavorite: true,   // true(★ 루틴) | false(☆ 당일)
 
       // 원형 팔레트 & 하단 독 온디맨드 상태
@@ -917,6 +937,7 @@
 
       gridInteractionMode: 'paint', // 'paint' | 'note'
       dayGrids: {},
+      dayGridBorders: {},
       dayGridNotes: {},
       dayGridStrokesByDate: {},
       circleStrokesByDate: {},
@@ -970,8 +991,13 @@
      ***************************************************************************/
     function normalizePaintObject(p, defaultFav = true) {
       if (!p) return null;
-      // 기존 데이터(category: 'positive'|'forbidden', isFixed)를 새 스펙(borderType: 'gold'|'black', isFavorite)으로 매끄럽게 변환
-      const borderType = p.borderType || (p.category === 'forbidden' ? 'black' : 'gold');
+      // 기존 데이터(category: 'positive'|'forbidden', isFixed)를 새 스펙(borderType: 'gold'|'black'|'none', isFavorite)으로 매끄럽게 변환
+      let borderType = 'gold';
+      if (p.borderType === 'gold' || p.borderType === 'black' || p.borderType === 'none') {
+        borderType = p.borderType;
+      } else if (p.category === 'forbidden') {
+        borderType = 'black';
+      }
       const isFavorite = typeof p.isFavorite === 'boolean'
         ? p.isFavorite
         : (typeof p.isFixed === 'boolean' ? p.isFixed : defaultFav);
@@ -983,11 +1009,87 @@
       };
     }
 
+    function getPaintBorderClass(borderType) {
+      if (borderType === 'black') return 'border-black-ring';
+      if (borderType === 'gold') return 'border-gold-ring';
+      return 'border-none-ring';
+    }
+
+    function getPaintBorderIcon(borderType) {
+      if (borderType === 'black') return '⬛';
+      if (borderType === 'gold') return '✨';
+      return '';
+    }
+
+    function getPaintInlineRingStyle(borderType) {
+      if (borderType === 'black') return 'border: 2px solid #18181b;';
+      if (borderType === 'gold') return 'border: 2px solid #fbbf24;';
+      return 'border: 1px solid rgba(28, 25, 23, 0.14);';
+    }
+
+    // 팔레트 원본 테두리(origBorder) 기준 3단계 순환 배열 반환:
+    // [0: 원래 테두리, 1: 테두리 없음, 2: 반대색상 테두리]
+    function getBorderCycleSequence(origBorder) {
+      if (origBorder === 'gold') return ['gold', 'none', 'black'];
+      if (origBorder === 'black') return ['black', 'none', 'gold'];
+      return ['none', 'gold', 'black'];
+    }
+
+    // 현재 붓이 칠할 때 사용할 테두리 타입 반환 (팔레트에 등록된 원본 물감의 borderType을 변경하지 않음)
+    function getEffectiveBrushBorderType() {
+      if (state.activeBrushBorderType === 'gold' || state.activeBrushBorderType === 'black' || state.activeBrushBorderType === 'none') {
+        return state.activeBrushBorderType;
+      }
+      const activePaint = getPaintById(state.activePaintId, state.selectedDate) || state.fixedPaints[0];
+      const origBorder = (activePaint && (activePaint.borderType === 'gold' || activePaint.borderType === 'black' || activePaint.borderType === 'none'))
+        ? activePaint.borderType
+        : 'gold';
+      const seq = getBorderCycleSequence(origBorder);
+      return seq[(state.brushBorderCycleStep || 0) % 3];
+    }
+
+    // 각 그리드 칸(slotIdx)에 개별 저장된 테두리 타입 반환 (이전에 칠한 칸들이 이후 테두리 변경에 영향받지 않도록 독립 보장)
+    function getSlotBorderType(dateStr, slotIdx, paintFallback) {
+      const borders = state.dayGridBorders && state.dayGridBorders[dateStr];
+      if (borders && (borders[slotIdx] === 'gold' || borders[slotIdx] === 'black' || borders[slotIdx] === 'none')) {
+        return borders[slotIdx];
+      }
+      const p = paintFallback !== undefined ? paintFallback : getPaintById((state.dayGrids[dateStr] || [])[slotIdx], dateStr);
+      if (p && (p.borderType === 'gold' || p.borderType === 'black' || p.borderType === 'none')) {
+        return p.borderType;
+      }
+      return 'gold';
+    }
+
+    // 기존 저장 데이터 중 dayGridBorders가 없는 칸들을 각 시점의 물감 테두리로 고정 마이그레이션
+    function ensureDayGridBordersInitialized() {
+      if (!state.dayGridBorders) state.dayGridBorders = {};
+      for (const d in state.dayGrids) {
+        const grid = state.dayGrids[d];
+        if (!Array.isArray(grid)) continue;
+        if (!Array.isArray(state.dayGridBorders[d])) {
+          state.dayGridBorders[d] = new Array(144).fill(null);
+        }
+        for (let i = 0; i < 144; i++) {
+          const pid = grid[i];
+          if (!pid) {
+            state.dayGridBorders[d][i] = null;
+          } else if (!state.dayGridBorders[d][i]) {
+            const p = getPaintById(pid, d);
+            state.dayGridBorders[d][i] = (p && (p.borderType === 'gold' || p.borderType === 'black' || p.borderType === 'none'))
+              ? p.borderType
+              : 'gold';
+          }
+        }
+      }
+    }
+
     function getSerializablePayload() {
       return {
         fixedPaints: state.fixedPaints,
         dailyPaintsByDate: state.dailyPaintsByDate,
         dayGrids: state.dayGrids,
+        dayGridBorders: state.dayGridBorders,
         dayGridNotes: state.dayGridNotes,
         dayGridStrokesByDate: state.dayGridStrokesByDate,
         circleStrokesByDate: state.circleStrokesByDate,
@@ -1013,7 +1115,9 @@
           state.dailyPaintsByDate = normDaily;
         }
         if (parsed.dayGrids) state.dayGrids = parsed.dayGrids;
+        if (parsed.dayGridBorders) state.dayGridBorders = parsed.dayGridBorders;
         if (parsed.dayGridNotes) state.dayGridNotes = parsed.dayGridNotes;
+        ensureDayGridBordersInitialized();
         if (parsed.dayGridStrokesByDate) state.dayGridStrokesByDate = parsed.dayGridStrokesByDate;
         if (parsed.circleStrokesByDate) state.circleStrokesByDate = parsed.circleStrokesByDate;
         if (parsed.birthDate) state.birthDate = parsed.birthDate;
@@ -1077,7 +1181,9 @@
           state.dailyPaintsByDate = normDaily;
         }
         if (parsed.dayGrids) state.dayGrids = parsed.dayGrids;
+        if (parsed.dayGridBorders) state.dayGridBorders = parsed.dayGridBorders;
         if (parsed.dayGridNotes) state.dayGridNotes = parsed.dayGridNotes;
+        ensureDayGridBordersInitialized();
         if (parsed.dayGridStrokesByDate) state.dayGridStrokesByDate = parsed.dayGridStrokesByDate;
         if (parsed.circleStrokesByDate) state.circleStrokesByDate = parsed.circleStrokesByDate;
         if (parsed.birthDate) state.birthDate = parsed.birthDate;
@@ -1176,11 +1282,12 @@
     function computeDayMemorySummary(dateStr) {
       const grid = state.dayGrids[dateStr];
       if (!grid) {
-        return { hasData: false, goldBorderCount: 0, blackBorderCount: 0, goldRatio: null, colorCss: null };
+        return { hasData: false, goldBorderCount: 0, blackBorderCount: 0, neutralCount: 0, goldRatio: null, colorCss: null };
       }
 
       let goldBorderCount = 0;
       let blackBorderCount = 0;
+      let neutralCount = 0;
 
       for (let i = 0; i < 144; i++) {
         const status = getTimeSlotStatus(dateStr, i);
@@ -1191,16 +1298,20 @@
         const paint = getPaintById(pid, dateStr);
         if (!paint) continue;
 
-        if (paint.borderType === 'black') {
+        const slotBorder = getSlotBorderType(dateStr, i, paint);
+        if (slotBorder === 'black') {
           blackBorderCount++;
-        } else {
+        } else if (slotBorder === 'gold') {
           goldBorderCount++;
+        } else {
+          // 테두리가 없는('none') 칸은 그 날의 황금색 기억 칸을 결정할 때 영향을 주지 않음
+          neutralCount++;
         }
       }
 
       const totalPainted = goldBorderCount + blackBorderCount;
       if (totalPainted === 0) {
-        return { hasData: false, goldBorderCount: 0, blackBorderCount: 0, goldRatio: null, colorCss: null };
+        return { hasData: false, goldBorderCount: 0, blackBorderCount: 0, neutralCount, goldRatio: null, colorCss: null };
       }
 
       // 황금 테두리(긍정) 칸이 많고 검은 테두리(부정) 칸이 적을수록 1.0(진한 황금색)에 수렴
@@ -1213,6 +1324,7 @@
         hasData: true,
         goldBorderCount,
         blackBorderCount,
+        neutralCount,
         totalPainted,
         goldRatio,
         colorCss
@@ -1345,7 +1457,8 @@
         const topPct = 50 + Math.sin(rad) * radiusPct;
 
         const isSelected = !state.isEraserMode && state.activePaintId === p.id;
-        const borderClass = p.borderType === 'black' ? 'border-black-ring' : 'border-gold-ring';
+        const borderClass = getPaintBorderClass(p.borderType);
+        const borderIcon = getPaintBorderIcon(p.borderType);
         const starChar = p.isFavorite ? '★' : '☆';
         const starColor = p.isFavorite ? 'text-amber-400' : 'text-stone-400 hover:text-amber-300';
 
@@ -1386,7 +1499,7 @@
             <div ondblclick="event.stopPropagation(); openEditPaintMixerById('${p.id}')"
                  title="클릭하여 선택 · 더블클릭하여 수정"
                  class="mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap shadow-xs flex items-center gap-1 ${isSelected ? 'bg-stone-900 text-amber-300 ring-1 ring-amber-400' : 'bg-[#fcfaf5]/95 text-stone-800 border border-stone-300/80'}">
-              <span>${p.borderType === 'black' ? '⬛' : '✨'}</span>
+              ${borderIcon ? `<span>${borderIcon}</span>` : ''}
               <span class="max-w-[76px] sm:max-w-[92px] truncate">${p.name}</span>
             </div>
           </div>
@@ -1403,8 +1516,9 @@
       if (!activePaint) return;
       state.activePaintId = activePaint.id;
 
-      const isGold = activePaint.borderType !== 'black';
-      const borderClass = isGold ? 'border-gold-ring' : 'border-black-ring';
+      // 현재 붓에 적용 중인 테두리 (하단 버튼 순환이나 임시 전환이 반영된 값, 팔레트 등록 원본과 독립)
+      const bType = getEffectiveBrushBorderType(); // 'gold' | 'black' | 'none'
+      const borderClass = getPaintBorderClass(bType);
 
       // 1) 하단 플로팅 독 업데이트
       const dockDot = document.getElementById('dock-paint-dot');
@@ -1423,12 +1537,20 @@
         dockEraser.className = 'px-3 py-1.5 rounded-full text-xs font-bold border-2 border-amber-400 bg-amber-400 text-stone-950 transition flex items-center gap-1 cursor-pointer';
       } else {
         dockDot.style.background = activePaint.color;
-        dockDot.className = `w-5 h-5 rounded-full shrink-0 ${borderClass}`;
+        dockDot.className = `w-5 h-5 rounded-full shrink-0 transition-all ${borderClass}`;
         dockStar.textContent = activePaint.isFavorite ? '★' : '☆';
         dockStar.className = activePaint.isFavorite ? 'text-amber-400 text-[11px]' : 'text-stone-400 text-[11px]';
         dockName.textContent = activePaint.name;
-        dockTag.textContent = isGold ? '✨ 황금 테두리 (긍정)' : '⬛ 검은 테두리 (부정)';
-        dockTag.className = isGold ? 'text-[9px] text-amber-300 font-semibold' : 'text-[9px] text-stone-300 font-semibold';
+        if (bType === 'gold') {
+          dockTag.textContent = '✨ 황금 테두리 (긍정)';
+          dockTag.className = 'text-[9px] text-amber-300 font-semibold';
+        } else if (bType === 'black') {
+          dockTag.textContent = '⬛ 검은 테두리 (부정)';
+          dockTag.className = 'text-[9px] text-stone-300 font-semibold';
+        } else {
+          dockTag.textContent = '○ 테두리 없음 (기억 평가 제외)';
+          dockTag.className = 'text-[9px] text-stone-400 font-semibold';
+        }
         dockEraser.className = 'px-3 py-1.5 rounded-full text-xs font-bold border border-stone-600 bg-stone-800 hover:bg-stone-700 text-stone-200 transition flex items-center gap-1 cursor-pointer';
       }
 
@@ -1451,12 +1573,16 @@
           : 'text-lg leading-none text-stone-400 hover:text-amber-500 hover:scale-125 transition cursor-pointer';
       }
       if (goldBtn && blackBtn) {
-        if (isGold) {
+        if (bType === 'gold') {
           goldBtn.className = 'py-1 rounded-full bg-stone-900 text-amber-300 shadow-2xs transition cursor-pointer';
           blackBtn.className = 'py-1 rounded-full text-stone-600 hover:text-stone-900 transition cursor-pointer';
-        } else {
+        } else if (bType === 'black') {
           blackBtn.className = 'py-1 rounded-full bg-stone-900 text-white shadow-2xs transition cursor-pointer';
           goldBtn.className = 'py-1 rounded-full text-stone-600 hover:text-stone-900 transition cursor-pointer';
+        } else {
+          // 둘 다 선택하지 않은 상태 ('none')
+          goldBtn.className = 'py-1 rounded-full text-stone-600 hover:text-stone-900 transition cursor-pointer';
+          blackBtn.className = 'py-1 rounded-full text-stone-600 hover:text-stone-900 transition cursor-pointer';
         }
       }
     }
@@ -1464,9 +1590,51 @@
     function selectPaint(paintId) {
       state.isEraserMode = false;
       state.activePaintId = paintId;
+      state.brushBorderCycleStep = 0;
+      const p = getPaintById(paintId, state.selectedDate);
+      state.activeBrushBorderType = (p && (p.borderType === 'gold' || p.borderType === 'black' || p.borderType === 'none'))
+        ? p.borderType
+        : 'gold';
       renderCircularPalette();
       if (!state.pinPalette) {
         closeArtistPalette();
+      }
+    }
+
+    // 하단 바(팔레트 버튼 P와 지우개 사이)의 택한 물감 설명 버튼 클릭 시:
+    // 1번 클릭 -> 테두리 없음('none')
+    // 2번 클릭 -> 반대색상 테두리(원래 황금색이었으면 검은색, 검은색이었으면 황금색)
+    // 3번 클릭 -> 원래 팔레트에 등록할 때 선택한 테두리로 복귀
+    // (원래 팔레트에 등록된 물감 객체의 borderType은 절대 변경하지 않음!)
+    function cycleDockBrushBorder() {
+      const activePaint = getPaintById(state.activePaintId, state.selectedDate) || state.fixedPaints[0];
+      if (!activePaint) return;
+
+      if (state.isEraserMode) {
+        state.isEraserMode = false;
+      }
+
+      const origBorder = (activePaint.borderType === 'gold' || activePaint.borderType === 'black' || activePaint.borderType === 'none')
+        ? activePaint.borderType
+        : 'gold';
+      const seq = getBorderCycleSequence(origBorder);
+
+      state.brushBorderCycleStep = ((state.brushBorderCycleStep || 0) + 1) % 3;
+      state.activeBrushBorderType = seq[state.brushBorderCycleStep];
+
+      updatePaletteCenterAndDockUI();
+      drawDailyGridCanvasFrame();
+
+      const stepLabel = state.brushBorderCycleStep === 0
+        ? '원래 등록된 테두리로 복귀'
+        : (state.brushBorderCycleStep === 1 && origBorder !== 'none' ? '테두리 없음' : '반대색 테두리');
+
+      if (state.activeBrushBorderType === 'gold') {
+        showToast(`✨ [${activePaint.name}] 붓 테두리: 황금 테두리 (${stepLabel})`, 'amber');
+      } else if (state.activeBrushBorderType === 'black') {
+        showToast(`⬛ [${activePaint.name}] 붓 테두리: 검은 테두리 (${stepLabel})`, 'stone');
+      } else {
+        showToast(`○ [${activePaint.name}] 붓 테두리: 테두리 없음 (${stepLabel})`, 'stone');
       }
     }
 
@@ -1522,29 +1690,32 @@
       }
     }
 
-    // 현재 선택된 물감의 테두리(황금 테두리=긍정 / 검은 테두리=부정)를 즉시 변경하고 그 날의 황금색 평가에 실시간 반영
+    // 팔레트 중앙 허브에서 현재 붓의 테두리(황금/검정/테두리 없음)를 전환
+    // (팔레트에 등록된 원본 물감의 borderType이나 이미 칠해진 그리드 칸의 테두리는 변경하지 않음!)
     function setActivePaintBorderType(borderType) {
       const paint = getPaintById(state.activePaintId, state.selectedDate);
       if (!paint) return;
-      paint.borderType = borderType;
-      saveState();
-      renderCircularPalette();
+      const currentBrushBorder = getEffectiveBrushBorderType();
+      const nextBorderType = currentBrushBorder === borderType ? 'none' : borderType;
+
+      state.activeBrushBorderType = nextBorderType;
+      const origBorder = (paint.borderType === 'gold' || paint.borderType === 'black' || paint.borderType === 'none')
+        ? paint.borderType
+        : 'gold';
+      const seq = getBorderCycleSequence(origBorder);
+      const foundStep = seq.indexOf(nextBorderType);
+      state.brushBorderCycleStep = foundStep !== -1 ? foundStep : 0;
+
+      updatePaletteCenterAndDockUI();
       drawDailyGridCanvasFrame();
-      updateDailyMemoryGemUI();
-      renderDailyGridNotesList();
-      analyzeCircularCanvasArea();
-      if (state.currentView === 'month') renderMonthView();
-      if (state.currentView === 'year') renderYearView();
-      if (state.currentView === 'life') {
-        buildLifeNetworkGeometry();
-        drawLifeNetworkFrame();
+
+      if (nextBorderType === 'gold') {
+        showToast(`✨ [${paint.name}] 현재 붓 테두리를 황금색(긍정)으로 전환했습니다.`, 'amber');
+      } else if (nextBorderType === 'black') {
+        showToast(`⬛ [${paint.name}] 현재 붓 테두리를 검은색(부정)으로 전환했습니다.`, 'stone');
+      } else {
+        showToast(`○ [${paint.name}] 현재 붓을 테두리 없음으로 전환했습니다 (기억 평가 제외).`, 'stone');
       }
-      showToast(
-        borderType === 'gold'
-          ? `✨ [${paint.name}] 테두리를 황금색(긍정적인 일)으로 설정했습니다.`
-          : `⬛ [${paint.name}] 테두리를 검은색(부정적인 일)으로 설정했습니다.`,
-        borderType === 'gold' ? 'amber' : 'stone'
-      );
     }
 
     function syncNewPaintFavoriteButtonUI() {
@@ -1559,11 +1730,11 @@
       }
     }
 
-    // 원형 팔레트 중앙: 새 물감 조색 모드로 열기
+    // 원형 팔레트 중앙: 새 물감 조색 모드로 열기 (기본값: 황금/검은 테두리 둘 다 선택되지 않은 'none' 상태)
     function openNewPaintMixer() {
       state.editingPaintId = null;
       state.newPaintIsFavorite = true;
-      state.newPaintBorderType = 'gold';
+      state.newPaintBorderType = 'none';
 
       const titleEl = document.getElementById('mixer-mode-title');
       const submitBtn = document.getElementById('btn-mixer-submit');
@@ -1578,7 +1749,7 @@
       if (colorInput) colorInput.value = '#6366f1';
 
       syncNewPaintFavoriteButtonUI();
-      setNewPaintBorderType('gold');
+      setNewPaintBorderType('none');
 
       document.getElementById('palette-center-default').classList.add('hidden');
       document.getElementById('palette-center-mixer').classList.remove('hidden');
@@ -1594,7 +1765,7 @@
       state.isEraserMode = false;
       state.editingPaintId = paint.id;
       state.newPaintIsFavorite = !!paint.isFavorite;
-      state.newPaintBorderType = paint.borderType === 'black' ? 'black' : 'gold';
+      state.newPaintBorderType = (paint.borderType === 'gold' || paint.borderType === 'black') ? paint.borderType : 'none';
 
       renderCircularPalette();
 
@@ -1646,16 +1817,28 @@
       syncNewPaintFavoriteButtonUI();
     }
 
+    function toggleNewPaintBorderType(borderType) {
+      // 이미 선택된 테두리 버튼을 다시 클릭하면 선택 해제('none' = 테두리 없음)
+      const nextType = state.newPaintBorderType === borderType ? 'none' : borderType;
+      setNewPaintBorderType(nextType);
+    }
+
     function setNewPaintBorderType(borderType) {
       state.newPaintBorderType = borderType;
       const goldBtn = document.getElementById('btn-new-border-gold');
       const blackBtn = document.getElementById('btn-new-border-black');
+      if (!goldBtn || !blackBtn) return;
+
       if (borderType === 'gold') {
         goldBtn.className = 'py-1 px-1.5 rounded-lg font-bold border-2 border-amber-400 bg-amber-50 text-amber-950 text-center cursor-pointer';
         blackBtn.className = 'py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer';
-      } else {
+      } else if (borderType === 'black') {
         blackBtn.className = 'py-1 px-1.5 rounded-lg font-bold border-2 border-stone-900 bg-stone-900 text-white text-center cursor-pointer';
         goldBtn.className = 'py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer';
+      } else {
+        // 둘 다 선택하지 않은 상태 ('none' = 테두리 없음)
+        goldBtn.className = 'py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer';
+        blackBtn.className = 'py-1 px-1.5 rounded-lg font-semibold border border-stone-300 bg-white text-stone-600 text-center cursor-pointer';
       }
     }
 
@@ -1682,6 +1865,9 @@
           return;
         }
 
+        // 기존에 칠해진 그리드 칸들의 테두리가 바뀌지 않도록 먼저 고정 보장
+        ensureDayGridBordersInitialized();
+
         const oldColor = paint.color;
         paint.name = name;
         paint.color = newColor;
@@ -1690,7 +1876,6 @@
         // 상시 루틴(★) <-> 당일 물감(☆) 위치 변경 처리
         const inFixedIdx = state.fixedPaints.findIndex(p => p.id === targetId);
         if (state.newPaintIsFavorite && inFixedIdx === -1) {
-          // 당일 물감 -> 상시 루틴으로 승격
           for (const d in state.dailyPaintsByDate) {
             const idx = (state.dailyPaintsByDate[d] || []).findIndex(p => p.id === targetId);
             if (idx !== -1) state.dailyPaintsByDate[d].splice(idx, 1);
@@ -1699,7 +1884,6 @@
           paint.isFixed = true;
           state.fixedPaints.push(paint);
         } else if (!state.newPaintIsFavorite && inFixedIdx !== -1) {
-          // 상시 루틴 -> 당일 물감으로 전환
           state.fixedPaints.splice(inFixedIdx, 1);
           paint.isFavorite = false;
           paint.isFixed = false;
@@ -1731,6 +1915,8 @@
         }
 
         state.activePaintId = targetId;
+        state.brushBorderCycleStep = 0;
+        state.activeBrushBorderType = paint.borderType;
         state.isEraserMode = false;
         closeNewPaintMixer();
         saveState();
@@ -1752,7 +1938,7 @@
         id: 'paint_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
         name,
         color: newColor,
-        borderType: state.newPaintBorderType, // 'gold' | 'black'
+        borderType: state.newPaintBorderType, // 'gold' | 'black' | 'none'
         isFavorite: state.newPaintIsFavorite,
         isFixed: state.newPaintIsFavorite
       };
@@ -1769,6 +1955,8 @@
       }
 
       state.activePaintId = newPaint.id;
+      state.brushBorderCycleStep = 0;
+      state.activeBrushBorderType = newPaint.borderType;
       state.isEraserMode = false;
       nameInput.value = '';
       closeNewPaintMixer();
@@ -1799,13 +1987,16 @@
         state.dailyPaintsByDate[d] = (state.dailyPaintsByDate[d] || []).filter(p => p.id !== paintId);
       }
 
-      // 3) 그리드에 해당 물감으로 칠해져 있던 슬롯 및 메모 정리
+      // 3) 그리드에 해당 물감으로 칠해져 있던 슬롯, 테두리 및 메모 정리
       for (const d in state.dayGrids) {
         const grid = state.dayGrids[d];
         if (!Array.isArray(grid)) continue;
         for (let i = 0; i < grid.length; i++) {
           if (grid[i] === paintId) {
             grid[i] = null;
+            if (state.dayGridBorders && state.dayGridBorders[d]) {
+              state.dayGridBorders[d][i] = null;
+            }
             if (state.dayGridNotes && state.dayGridNotes[d]) {
               delete state.dayGridNotes[d][i];
             }
@@ -1825,6 +2016,8 @@
       const remaining = getAllPaintsForDate(state.selectedDate);
       if (state.activePaintId === paintId && remaining.length > 0) {
         state.activePaintId = remaining[0].id;
+        state.brushBorderCycleStep = 0;
+        state.activeBrushBorderType = remaining[0].borderType || 'gold';
       }
 
       saveState();
@@ -2234,9 +2427,7 @@
       listEl.innerHTML = activeItems.map(item => {
         const pct = (item.count / totalInsideCircle) * 100;
         const hrs = ((pct / 100) * 24).toFixed(1);
-        const ringStyle = item.paint.borderType === 'black'
-          ? 'border: 2px solid #18181b;'
-          : 'border: 2px solid #fbbf24;';
+        const ringStyle = getPaintInlineRingStyle(item.paint.borderType);
         return `
           <div class="flex items-center justify-between bg-white px-2 py-1 rounded-xl border border-stone-200/80">
             <div class="flex items-center gap-1.5 min-w-0">
@@ -2290,23 +2481,25 @@
       }
     }
 
-    // 클릭한 슬롯과 같은 물감으로 연속해서 칠해진 구간(startSlot ~ endSlot) 탐색
+    // 클릭한 슬롯과 같은 물감 + 같은 테두리로 연속해서 칠해진 구간(startSlot ~ endSlot) 탐색
     function findContiguousSamePaintRange(dateStr, slotIdx) {
       const grid = state.dayGrids[dateStr] || [];
       const pid = grid[slotIdx];
-      if (!pid) return { startSlot: slotIdx, endSlot: slotIdx, paintId: null };
+      if (!pid) return { startSlot: slotIdx, endSlot: slotIdx, paintId: null, borderType: 'none' };
+      const paint = getPaintById(pid, dateStr);
+      const targetBorder = getSlotBorderType(dateStr, slotIdx, paint);
       let start = slotIdx;
       let end = slotIdx;
-      while (start > 0 && grid[start - 1] === pid) {
+      while (start > 0 && grid[start - 1] === pid && getSlotBorderType(dateStr, start - 1, paint) === targetBorder) {
         start--;
       }
-      while (end < 143 && grid[end + 1] === pid) {
+      while (end < 143 && grid[end + 1] === pid && getSlotBorderType(dateStr, end + 1, paint) === targetBorder) {
         end++;
       }
-      return { startSlot: start, endSlot: end, paintId: pid };
+      return { startSlot: start, endSlot: end, paintId: pid, borderType: targetBorder };
     }
 
-    // 하루 144칸 중 색칠된 칸들을 (물감 + 메모) 기준 연속 구간 목록으로 추출
+    // 하루 144칸 중 색칠된 칸들을 (물감 + 칸별 테두리 + 메모) 기준 연속 구간 목록으로 추출
     function extractDailyColoredBlocks(dateStr = state.selectedDate) {
       const grid = state.dayGrids[dateStr] || [];
       const blocks = [];
@@ -2323,19 +2516,24 @@
           i++;
           continue;
         }
+        const slotBorder = getSlotBorderType(dateStr, i, paint);
         const note = getNoteForSlot(dateStr, i);
         let end = i;
         while (end + 1 < 144) {
           const nextStatus = getTimeSlotStatus(dateStr, end + 1);
           if (nextStatus === 'future' && state.lockFutureTime) break;
-          if (grid[end + 1] === pid && getNoteForSlot(dateStr, end + 1) === note) {
+          if (
+            grid[end + 1] === pid &&
+            getSlotBorderType(dateStr, end + 1, paint) === slotBorder &&
+            getNoteForSlot(dateStr, end + 1) === note
+          ) {
             end++;
           } else {
             break;
           }
         }
         const prevBlock = blocks.length > 0 ? blocks[blocks.length - 1] : null;
-        const canMergePrev = !!(prevBlock && prevBlock.paintId === pid && prevBlock.endSlot === i - 1);
+        const canMergePrev = !!(prevBlock && prevBlock.paintId === pid && prevBlock.borderType === slotBorder && prevBlock.endSlot === i - 1);
         blocks.push({
           startSlot: i,
           endSlot: end,
@@ -2344,6 +2542,7 @@
           timeRangeStr: formatSlotRangeLabel(i, end),
           paintId: pid,
           paint,
+          borderType: slotBorder,
           note,
           canMergePrev
         });
@@ -2425,9 +2624,10 @@
       const textarea = document.getElementById('grid-note-textarea');
       const popover = document.getElementById('grid-note-popover');
 
+      const slotBorder = getSlotBorderType(state.selectedDate, slotIdx, paint);
       if (swatch) {
         swatch.style.background = paint.color;
-        swatch.className = `w-4 h-4 rounded-full shrink-0 ${paint.borderType === 'black' ? 'border-black-ring' : 'border-gold-ring'}`;
+        swatch.className = `w-4 h-4 rounded-full shrink-0 ${getPaintBorderClass(slotBorder)}`;
       }
       if (nameEl) nameEl.textContent = paint.name;
       if (blockLabel) blockLabel.textContent = formatSlotRangeLabel(range.startSlot, range.endSlot);
@@ -2557,10 +2757,8 @@
 
       listEl.innerHTML = blocks.map((b, idx) => {
         const prevBlock = idx > 0 ? blocks[idx - 1] : null;
-        const ringStyle = b.paint.borderType === 'black'
-          ? 'border: 2px solid #18181b;'
-          : 'border: 2px solid #fbbf24;';
-        const borderBadge = b.paint.borderType === 'black' ? '⬛' : '✨';
+        const ringStyle = getPaintInlineRingStyle(b.borderType);
+        const borderBadge = getPaintBorderIcon(b.borderType);
 
         const mergeBtnHtml = b.canMergePrev && prevBlock
           ? `<button type="button" onclick="mergeWithPreviousNoteBlock(${prevBlock.startSlot}, ${prevBlock.endSlot}, ${b.startSlot}, ${b.endSlot})" class="px-1.5 py-0.5 rounded-md bg-stone-100 hover:bg-amber-100 text-stone-500 hover:text-amber-900 border border-stone-300 text-[10px] font-bold shrink-0 transition cursor-pointer" title="위 구간과 같은 물감입니다. 하나로 합치려면 클릭하세요.">🔗합치기</button>`
@@ -2606,7 +2804,10 @@
 
       const range = findContiguousSamePaintRange(state.selectedDate, cell.slotIdx);
       const noteText = getNoteForSlot(state.selectedDate, cell.slotIdx);
-      const borderTag = paint.borderType === 'black' ? '⬛ 검은 테두리(부정)' : '✨ 황금 테두리(긍정)';
+      const slotBorder = getSlotBorderType(state.selectedDate, cell.slotIdx, paint);
+      const borderTag = slotBorder === 'black'
+        ? '⬛ 검은 테두리(부정)'
+        : (slotBorder === 'gold' ? '✨ 황금 테두리(긍정)' : '○ 테두리 없음');
 
       tooltip.classList.remove('hidden');
       tooltip.style.left = (clientX + 14) + 'px';
@@ -2722,11 +2923,18 @@
       if (!state.dayGrids[state.selectedDate]) {
         state.dayGrids[state.selectedDate] = new Array(144).fill(null);
       }
+      if (!state.dayGridBorders) state.dayGridBorders = {};
+      if (!state.dayGridBorders[state.selectedDate]) {
+        state.dayGridBorders[state.selectedDate] = new Array(144).fill(null);
+      }
+
       const grid = state.dayGrids[state.selectedDate];
+      const borders = state.dayGridBorders[state.selectedDate];
       const radius = Number(state.gridBrushRadius);
       const activePaint = getPaintById(state.activePaintId) || state.fixedPaints[0];
       const color = activePaint ? activePaint.color : '#f59e0b';
       const isEraser = state.isEraserMode;
+      const effectiveBorder = getEffectiveBrushBorderType();
 
       const off = ensureGridTrailOffscreenCanvas();
       if (off) {
@@ -2766,7 +2974,9 @@
             if (status === 'future' && state.lockFutureTime) continue;
 
             const nextVal = isEraser ? null : (activePaint ? activePaint.id : null);
-            if (grid[cell.slotIdx] !== nextVal) {
+            const nextBorder = isEraser ? null : effectiveBorder;
+
+            if (grid[cell.slotIdx] !== nextVal || borders[cell.slotIdx] !== nextBorder) {
               // 지우개로 지우거나 다른 물감으로 덮어쓰면 기존 칸의 메모 정리
               if (!nextVal || (grid[cell.slotIdx] && grid[cell.slotIdx] !== nextVal)) {
                 if (state.dayGridNotes && state.dayGridNotes[state.selectedDate]) {
@@ -2774,6 +2984,7 @@
                 }
               }
               grid[cell.slotIdx] = nextVal;
+              borders[cell.slotIdx] = nextBorder;
               cellChanged = true;
             }
           }
@@ -3013,14 +3224,14 @@
           roundRectCanvas(ctx, cell.x, cell.y, cell.w, cell.h, 5);
           ctx.fill();
         } else if (paint) {
-          // 물감이 칠해진 칸: 내부는 자유롭게 선택한 물감 색, 테두리는 황금색(긍정) 또는 검은색(부정)!
-          const isBlackBorder = paint.borderType === 'black';
+          // 물감이 칠해진 칸: 내부는 자유롭게 선택한 물감 색, 테두리는 칸별로 저장된 개별 테두리(slotBorder) 사용!
+          const slotBorder = getSlotBorderType(state.selectedDate, cell.slotIdx, paint);
 
           ctx.fillStyle = paint.color;
           roundRectCanvas(ctx, cell.x, cell.y, cell.w, cell.h, 5);
           ctx.fill();
 
-          if (isBlackBorder) {
+          if (slotBorder === 'black') {
             ctx.strokeStyle = '#18181b';
             ctx.lineWidth = 2.4;
             roundRectCanvas(ctx, cell.x, cell.y, cell.w, cell.h, 5);
@@ -3030,7 +3241,7 @@
             ctx.beginPath();
             ctx.arc(cell.x + cell.w - 5, cell.y + 5, 1.8, 0, Math.PI * 2);
             ctx.fill();
-          } else {
+          } else if (slotBorder === 'gold') {
             ctx.shadowColor = 'rgba(251, 191, 36, 0.55)';
             ctx.shadowBlur = 5;
             ctx.strokeStyle = '#fbbf24';
@@ -3050,6 +3261,7 @@
             const isStartInRow =
               cell.col === 0 ||
               grid[cell.slotIdx - 1] !== paintId ||
+              getSlotBorderType(state.selectedDate, cell.slotIdx - 1, paint) !== slotBorder ||
               getNoteForSlot(state.selectedDate, cell.slotIdx - 1) !== noteText;
 
             if (isStartInRow) {
@@ -3120,13 +3332,16 @@
         ctx.restore();
       }
 
-      // 색칠 모드일 때만 마우스 호버 원형 붓 프리뷰 가이드 표시
+      // 색칠 모드일 때만 마우스 호버 원형 붓 프리뷰 가이드 표시 (현재 붓에 설정된 테두리 색상 반영)
       if (hoverGridPt && state.gridInteractionMode === 'paint' && !activeNotePopoverContext) {
         const activePaint = getPaintById(state.activePaintId) || state.fixedPaints[0];
         const brushColor = state.isEraserMode ? '#78716c' : (activePaint ? activePaint.color : '#f59e0b');
+        const effectiveBorder = getEffectiveBrushBorderType();
         const borderRingColor = state.isEraserMode
           ? '#44403c'
-          : (activePaint && activePaint.borderType === 'black' ? '#18181b' : '#fbbf24');
+          : (effectiveBorder === 'black'
+              ? '#18181b'
+              : (effectiveBorder === 'gold' ? '#fbbf24' : brushColor));
         const r = Number(state.gridBrushRadius);
 
         ctx.save();
@@ -3183,6 +3398,9 @@
 
     function clearDayGrid() {
       state.dayGrids[state.selectedDate] = new Array(144).fill(null);
+      if (state.dayGridBorders) {
+        state.dayGridBorders[state.selectedDate] = new Array(144).fill(null);
+      }
       if (state.dayGridNotes) {
         delete state.dayGridNotes[state.selectedDate];
       }
@@ -3269,8 +3487,9 @@
           futureCount++;
         } else if (paint) {
           allEmptyPast = false;
-          if (paint.borderType === 'black') blackCount++;
-          else goldCount++;
+          const slotBorder = getSlotBorderType(dateStr, idx, paint);
+          if (slotBorder === 'black') blackCount++;
+          else if (slotBorder === 'gold') goldCount++;
 
           if (!colorCounts[paint.color]) {
             colorCounts[paint.color] = { count: 0, name: paint.name, color: paint.color };
@@ -3334,10 +3553,10 @@
       }
       const noteSuffix = hourNotes.length > 0 ? ` | 📝 ${hourNotes.join(' · ')}` : '';
 
-      // 색칠된 칸이 있을 때만 황금/검정 테두리를 부여하고, 빈 과거+미래만 섞인 경우 점선 테두리 적용
-      const borderStyle = (goldCount === 0 && blackCount === 0)
-        ? 'border: 1px dashed rgba(120, 113, 108, 0.35)'
-        : (blackCount > goldCount ? 'border: 1.5px solid #18181b' : 'border: 1.5px solid #fbbf24');
+      // 황금/검정 테두리 칸이 있을 때만 해당 테두리를 부여하고, 테두리 없는('none') 물감만 칠해진 경우 테두리 없음 적용
+      const borderStyle = (goldCount > 0 || blackCount > 0)
+        ? (blackCount > goldCount ? 'border: 1.5px solid #18181b' : 'border: 1.5px solid #fbbf24')
+        : (allEmptyPast ? 'border: 1px dashed rgba(120, 113, 108, 0.35)' : 'border: none');
 
       // 빈 칸(투명)이 섞여 있는 경우: 상단 레이어는 100% 크기의 비율 그라데이션, 하단 레이어는 8px 도화지 결 패턴으로 분리
       if (transparentCount > 0) {
@@ -4613,7 +4832,7 @@ def init_db():
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 color TEXT NOT NULL,
-                border_type TEXT NOT NULL CHECK(border_type IN ('gold', 'black')),
+                border_type TEXT NOT NULL CHECK(border_type IN ('gold', 'black', 'none')),
                 is_favorite INTEGER NOT NULL DEFAULT 1,
                 target_date TEXT
             );
@@ -4643,7 +4862,7 @@ def calculate_gold_ratio_by_border(slots, paint_map):
             continue
         if paint_map[pid]["border_type"] == "black":
             black_cnt += 1
-        else:
+        elif paint_map[pid]["border_type"] == "gold":
             gold_cnt += 1
 
     total = gold_cnt + black_cnt
@@ -5063,6 +5282,1382 @@ if __name__ == "__main__":
       reader.readAsText(file);
     }
 
+    /***************************************************************************
+     * 15. 엑셀(.xlsx) 추출 엔진 — 일 단위 그리드 도화지 & 월 단위 시간 모자이크
+     ***************************************************************************/
+    const KOR_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+    function getWeekdayKor(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d.getTime())) return '';
+      return KOR_WEEKDAYS[d.getDay()];
+    }
+
+    function getBorderLabelKor(borderType) {
+      if (borderType === 'gold') return '✨ 황금 테두리 (긍정)';
+      if (borderType === 'black') return '⬛ 검은 테두리 (부정)';
+      return '○ 테두리 없음 (평가 제외)';
+    }
+
+    function getBorderShortBadge(borderType) {
+      if (borderType === 'gold') return '✨';
+      if (borderType === 'black') return '⬛';
+      return '○';
+    }
+
+    function cleanHex6(hexStr, fallback = 'FFFFFF') {
+      const cleaned = String(hexStr || '').replace('#', '').trim().toUpperCase();
+      if (/^[0-9A-F]{6}$/.test(cleaned)) return cleaned;
+      if (/^[0-9A-F]{3}$/.test(cleaned)) {
+        return cleaned.split('').map(ch => ch + ch).join('');
+      }
+      return fallback;
+    }
+
+    function getIdealTextHexForBg(bgHex) {
+      const { r, g, b } = hexToRgbObj('#' + cleanHex6(bgHex, 'FFFFFF'));
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      return luminance > 0.62 ? '1C1917' : 'FFFFFF';
+    }
+
+    function makeExcelBorderObj(borderType) {
+      if (borderType === 'gold') {
+        return {
+          top: { style: 'medium', color: { rgb: 'F59E0B' } },
+          bottom: { style: 'medium', color: { rgb: 'F59E0B' } },
+          left: { style: 'medium', color: { rgb: 'F59E0B' } },
+          right: { style: 'medium', color: { rgb: 'F59E0B' } }
+        };
+      }
+      if (borderType === 'black') {
+        return {
+          top: { style: 'medium', color: { rgb: '18181B' } },
+          bottom: { style: 'medium', color: { rgb: '18181B' } },
+          left: { style: 'medium', color: { rgb: '18181B' } },
+          right: { style: 'medium', color: { rgb: '18181B' } }
+        };
+      }
+      return {
+        top: { style: 'thin', color: { rgb: 'E7E5E4' } },
+        bottom: { style: 'thin', color: { rgb: 'E7E5E4' } },
+        left: { style: 'thin', color: { rgb: 'E7E5E4' } },
+        right: { style: 'thin', color: { rgb: 'E7E5E4' } }
+      };
+    }
+
+    function makeHeaderCellStyle(bgHex = '1C1917', fgHex = 'FDE68A') {
+      return {
+        fill: { patternType: 'solid', fgColor: { rgb: bgHex } },
+        font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: fgHex } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin', color: { rgb: '44403C' } },
+          bottom: { style: 'thin', color: { rgb: '44403C' } },
+          left: { style: 'thin', color: { rgb: '44403C' } },
+          right: { style: 'thin', color: { rgb: '44403C' } }
+        }
+      };
+    }
+
+    function makeDefaultCellStyle(alignH = 'center', bold = false) {
+      return {
+        font: { name: '맑은 고딕', sz: 10, bold, color: { rgb: '1C1917' } },
+        alignment: { horizontal: alignH, vertical: 'center', wrapText: true },
+        border: makeExcelBorderObj('none')
+      };
+    }
+
+    // 오프라인 등으로 CDN XLSX 라이브러리가 로드되지 않았을 때를 대비한 XML 스프레드시트 폴백
+    function downloadFallbackXmlWorkbook(sheetsData, fileName) {
+      let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<?mso-application progid="Excel.Sheet"?>\n';
+      xml += '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">\n';
+      for (const sh of sheetsData) {
+        xml += `  <Worksheet ss:Name="${escapeHtmlAttr(sh.name)}">\n    <Table>\n`;
+        for (const row of sh.rows) {
+          xml += '      <Row>';
+          for (const cell of row) {
+            const val = cell === null || cell === undefined ? '' : String(cell);
+            const isNum = typeof cell === 'number' && !isNaN(cell);
+            xml += `<Cell><Data ss:Type="${isNum ? 'Number' : 'String'}">${escapeHtmlAttr(val)}</Data></Cell>`;
+          }
+          xml += '</Row>\n';
+        }
+        xml += '    </Table>\n  </Worksheet>\n';
+      }
+      xml += '</Workbook>';
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    /**
+     * [1] 일 단위: 하루 시간 그리드 도화지 엑셀(.xlsx) 추출
+     *  - 시트 1: 24시간_그리드_도화지 (6×24 시각적 그리드 + 색상/테두리/메모 반영)
+     *  - 시트 2: 시간대별_세부사항_목록 (연속 색칠 구간 요약 및 메모)
+     *  - 시트 3: 10분_슬롯_전체데이터 (144칸 전체 상세 기록)
+     */
+    function exportDailyGridToExcel() {
+      const dateStr = state.selectedDate;
+      const weekday = getWeekdayKor(dateStr);
+      const grid = state.dayGrids[dateStr] || new Array(144).fill(null);
+      const memSummary = computeDayMemorySummary(dateStr);
+      const blocks = extractDailyColoredBlocks(dateStr);
+
+      let paintedSlotsCount = 0;
+      for (let i = 0; i < 144; i++) {
+        const status = getTimeSlotStatus(dateStr, i);
+        if (status === 'future' && state.lockFutureTime) continue;
+        if (grid[i] && getPaintById(grid[i], dateStr)) paintedSlotsCount++;
+      }
+
+      const goldRatioStr = memSummary.hasData
+        ? `황금 ${Math.round(memSummary.goldRatio * 100)}%`
+        : (dateStr > getTodayDateString() ? '미래 (초록)' : '투명 (기록 없음)');
+
+      // -------------------------------------------------------------------------
+      // 시트 1 데이터 구성: 24시간 × 6열(10분 단위) 그리드 도화지
+      // -------------------------------------------------------------------------
+      const sheet1Rows = [
+        [`🎨 하루 시간 그리드 도화지 (${dateStr} ${weekday}요일)`, '', '', '', '', '', '', ''],
+        [
+          '기록된 총 시간', `${(paintedSlotsCount / 6).toFixed(1)}시간 (${paintedSlotsCount}/144칸)`,
+          '✨ 황금 테두리(긍정)', `${memSummary.goldBorderCount}칸 (${(memSummary.goldBorderCount / 6).toFixed(1)}h)`,
+          '⬛ 검은 테두리(부정)', `${memSummary.blackBorderCount}칸 (${(memSummary.blackBorderCount / 6).toFixed(1)}h)`,
+          '(*) 기억의 색 농도', goldRatioStr
+        ],
+        [],
+        ['시간 \ 10분 구간', '00~10분 (10m)', '10~20분 (20m)', '20~30분 (30m)', '30~40분 (40m)', '40~50분 (50m)', '50~60분 (60m)', '시간대별 세부사항(메모) 요약']
+      ];
+
+      const sheet1CellMeta = []; // { r, c, bgHex, borderType, isFuture }
+
+      for (let h = 0; h < 24; h++) {
+        const hourLabel = `${String(h).padStart(2, '0')}:00`;
+        const rowCells = [hourLabel];
+        const hourNotes = [];
+
+        for (let m = 0; m < 6; m++) {
+          const slotIdx = h * 6 + m;
+          const status = getTimeSlotStatus(dateStr, slotIdx);
+          const pid = grid[slotIdx];
+          const paint = getPaintById(pid, dateStr);
+          const note = getNoteForSlot(dateStr, slotIdx);
+
+          if (status === 'future' && (!paint || state.lockFutureTime)) {
+            rowCells.push('미래 (초록)');
+            sheet1CellMeta.push({ r: h + 4, c: m + 1, bgHex: '22C55E', borderType: 'none', isFuture: true });
+          } else if (paint) {
+            const slotBorder = getSlotBorderType(dateStr, slotIdx, paint);
+            const badge = getBorderShortBadge(slotBorder);
+            const cellText = note
+              ? `${badge}${paint.name} [${note}]`
+              : `${badge}${paint.name}`;
+            rowCells.push(cellText);
+            if (note && !hourNotes.includes(note)) hourNotes.push(note);
+            sheet1CellMeta.push({
+              r: h + 4,
+              c: m + 1,
+              bgHex: cleanHex6(paint.color, 'F59E0B'),
+              borderType: slotBorder,
+              isFuture: false
+            });
+          } else {
+            rowCells.push('');
+          }
+        }
+
+        rowCells.push(hourNotes.join(' · '));
+        sheet1Rows.push(rowCells);
+      }
+
+      // -------------------------------------------------------------------------
+      // 시트 2 데이터 구성: 색칠한 시간대별 세부사항 목록 + 물감별 요약
+      // -------------------------------------------------------------------------
+      const sheet2Rows = [
+        [`📝 색칠한 시간대별 세부사항 기록 (${dateStr} ${weekday}요일)`, '', '', '', '', '', '', ''],
+        ['순번', '시간 구간', '소요 시간(분)', '소요 시간(시간)', '물감(할 일) 이름', '색상(HEX)', '테두리 구분', '세부사항(메모)']
+      ];
+
+      const paintTotals = {};
+      if (blocks.length === 0) {
+        sheet2Rows.push(['-', '기록된 색칠 구간이 없습니다.', 0, 0, '-', '-', '-', '-']);
+      } else {
+        blocks.forEach((b, idx) => {
+          sheet2Rows.push([
+            idx + 1,
+            b.timeRangeStr,
+            b.durationMins,
+            Number((b.durationMins / 60).toFixed(2)),
+            b.paint.name,
+            b.paint.color,
+            getBorderLabelKor(b.borderType),
+            b.note || ''
+          ]);
+
+          if (!paintTotals[b.paint.id]) {
+            paintTotals[b.paint.id] = {
+              name: b.paint.name,
+              color: b.paint.color,
+              slots: 0,
+              goldSlots: 0,
+              blackSlots: 0,
+              noneSlots: 0
+            };
+          }
+          paintTotals[b.paint.id].slots += b.slotCount;
+          if (b.borderType === 'gold') paintTotals[b.paint.id].goldSlots += b.slotCount;
+          else if (b.borderType === 'black') paintTotals[b.paint.id].blackSlots += b.slotCount;
+          else paintTotals[b.paint.id].noneSlots += b.slotCount;
+        });
+      }
+
+      sheet2Rows.push([]);
+      sheet2Rows.push(['📊 물감(할 일)별 투자 시간 합계', '색상(HEX)', '총 칸수(10분)', '총 시간(h)', '✨ 황금테두리(칸)', '⬛ 검은테두리(칸)', '○ 테두리없음(칸)', '비율(%)']);
+      const paintSummaryStartRow = sheet2Rows.length;
+      Object.values(paintTotals)
+        .sort((a, b) => b.slots - a.slots)
+        .forEach(pt => {
+          const ratioPct = paintedSlotsCount > 0 ? Number(((pt.slots / paintedSlotsCount) * 100).toFixed(1)) : 0;
+          sheet2Rows.push([
+            pt.name,
+            pt.color,
+            pt.slots,
+            Number((pt.slots / 6).toFixed(2)),
+            pt.goldSlots,
+            pt.blackSlots,
+            pt.noneSlots,
+            ratioPct
+          ]);
+        });
+
+      // -------------------------------------------------------------------------
+      // 시트 3 데이터 구성: 10분 슬롯 전체 상세 데이터 (144칸)
+      // -------------------------------------------------------------------------
+      const sheet3Rows = [
+        ['슬롯 번호', '시간대(시)', '10분 구간', '시간 상태', '물감(할 일) 이름', '색상(HEX)', '테두리 구분', '세부사항(메모)']
+      ];
+
+      for (let i = 0; i < 144; i++) {
+        const h = Math.floor(i / 6);
+        const status = getTimeSlotStatus(dateStr, i);
+        const pid = grid[i];
+        const paint = getPaintById(pid, dateStr);
+        const note = getNoteForSlot(dateStr, i);
+        const statusKor = status === 'future' ? '미래(초록)' : (status === 'current' ? '현재 진행 중' : '과거');
+
+        if (status === 'future' && (!paint || state.lockFutureTime)) {
+          sheet3Rows.push([
+            i + 1,
+            `${String(h).padStart(2, '0')}시`,
+            formatSlotRangeLabel(i, i),
+            statusKor,
+            '미래 (초록)',
+            '#22c55e',
+            '-',
+            ''
+          ]);
+        } else if (paint) {
+          const slotBorder = getSlotBorderType(dateStr, i, paint);
+          sheet3Rows.push([
+            i + 1,
+            `${String(h).padStart(2, '0')}시`,
+            formatSlotRangeLabel(i, i),
+            statusKor,
+            paint.name,
+            paint.color,
+            getBorderLabelKor(slotBorder),
+            note || ''
+          ]);
+        } else {
+          sheet3Rows.push([
+            i + 1,
+            `${String(h).padStart(2, '0')}시`,
+            formatSlotRangeLabel(i, i),
+            statusKor,
+            '빈 과거 (투명)',
+            '-',
+            '-',
+            ''
+          ]);
+        }
+      }
+
+      const fileName = `시간의도화지_일간그리드_${dateStr}.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        downloadFallbackXmlWorkbook([
+          { name: '24시간_그리드_도화지', rows: sheet1Rows },
+          { name: '시간대별_세부사항_목록', rows: sheet2Rows },
+          { name: '10분_슬롯_전체데이터', rows: sheet3Rows }
+        ], fileName.replace('.xlsx', '.xls'));
+        showToast(`📊 [${dateStr}] 일간 시간 그리드 엑셀 파일을 추출했습니다!`, 'emerald');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 시트 1 생성 및 스타일링
+      const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+      ws1['!cols'] = [
+        { wch: 16 },
+        { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 },
+        { wch: 36 }
+      ];
+      ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+
+      // 시트 1 헤더 및 기본 셀 스타일
+      for (let c = 0; c <= 7; c++) {
+        const titleRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws1[titleRef]) ws1[titleRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+
+        const sumRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws1[sumRef]) {
+          ws1[sumRef].s = c % 2 === 0
+            ? makeHeaderCellStyle('44403C', 'FFFFFF')
+            : makeDefaultCellStyle('center', true);
+        }
+
+        const hdrRef = XLSX.utils.encode_cell({ r: 3, c });
+        if (ws1[hdrRef]) ws1[hdrRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+
+      for (let h = 0; h < 24; h++) {
+        const r = h + 4;
+        const timeCellRef = XLSX.utils.encode_cell({ r, c: 0 });
+        if (ws1[timeCellRef]) ws1[timeCellRef].s = makeDefaultCellStyle('center', true);
+
+        const noteCellRef = XLSX.utils.encode_cell({ r, c: 7 });
+        if (ws1[noteCellRef]) ws1[noteCellRef].s = makeDefaultCellStyle('left', false);
+
+        for (let m = 0; m < 6; m++) {
+          const cellRef = XLSX.utils.encode_cell({ r, c: m + 1 });
+          if (ws1[cellRef]) ws1[cellRef].s = makeDefaultCellStyle('center', false);
+        }
+      }
+
+      // 색칠된 칸에 실제 물감 배경색과 황금/검은 테두리 스타일 적용
+      for (const meta of sheet1CellMeta) {
+        const ref = XLSX.utils.encode_cell({ r: meta.r, c: meta.c });
+        if (!ws1[ref]) continue;
+        const textHex = getIdealTextHexForBg(meta.bgHex);
+        ws1[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: meta.bgHex } },
+          font: { name: '맑은 고딕', sz: 9.5, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: makeExcelBorderObj(meta.borderType)
+        };
+      }
+
+      // 시트 2 생성 및 스타일링
+      const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+      ws2['!cols'] = [
+        { wch: 10 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+        { wch: 24 }, { wch: 12 }, { wch: 24 }, { wch: 42 }
+      ];
+      ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+
+      for (let c = 0; c <= 7; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[tRef]) ws2[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws2[hRef]) ws2[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+
+        const sRef = XLSX.utils.encode_cell({ r: paintSummaryStartRow - 1, c });
+        if (ws2[sRef]) ws2[sRef].s = makeHeaderCellStyle('44403C', 'FFFFFF');
+      }
+
+      blocks.forEach((b, idx) => {
+        const r = idx + 2;
+        const bgHex = cleanHex6(b.paint.color, 'F59E0B');
+        const textHex = getIdealTextHexForBg(bgHex);
+        const nameRef = XLSX.utils.encode_cell({ r, c: 4 });
+        if (ws2[nameRef]) {
+          ws2[nameRef].s = {
+            fill: { patternType: 'solid', fgColor: { rgb: bgHex } },
+            font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: textHex } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: makeExcelBorderObj(b.borderType)
+          };
+        }
+      });
+
+      // 시트 3 생성 및 스타일링
+      const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+      ws3['!cols'] = [
+        { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 14 },
+        { wch: 24 }, { wch: 12 }, { wch: 24 }, { wch: 42 }
+      ];
+      for (let c = 0; c <= 7; c++) {
+        const hRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws3[hRef]) ws3[hRef].s = makeHeaderCellStyle('1C1917', 'FDE68A');
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws1, '24시간_그리드_도화지');
+      XLSX.utils.book_append_sheet(wb, ws2, '시간대별_세부사항_목록');
+      XLSX.utils.book_append_sheet(wb, ws3, '10분_슬롯_전체데이터');
+
+      XLSX.writeFile(wb, fileName);
+      showToast(`📊 [${dateStr}] 하루 시간 그리드 도화지를 엑셀(.xlsx)로 추출했습니다!`, 'emerald');
+    }
+
+    /**
+     * [2] 월 단위: 월간 시간 모자이크 엑셀(.xlsx) 추출
+     *  - 시트 1: 월간_시간_모자이크 (일수 × 24시간 모자이크 매트릭스 + (*)기억 농도)
+     *  - 시트 2: 월간_일자별_세부사항 (해당 월의 모든 색칠 구간 및 세부사항 메모)
+     *  - 시트 3: 월간_물감별_통계 (해당 월의 할 일/물감별 투자 시간 및 테두리 통계)
+     */
+    function exportMonthlyMosaicToExcel() {
+      const { year, month } = state.selectedMonthYear;
+      const monthStr = String(month).padStart(2, '0');
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      // -------------------------------------------------------------------------
+      // 시트 1: 월간_시간_모자이크 (가로 24시간 × 세로 일수 + 일별 기억 요약)
+      // -------------------------------------------------------------------------
+      const headerRow = ['날짜', '요일'];
+      for (let h = 0; h < 24; h++) {
+        headerRow.push(`${String(h).padStart(2, '0')}시`);
+      }
+      headerRow.push('기록 시간(h)', '✨ 황금테두리(칸)', '⬛ 검은테두리(칸)', '○ 테두리없음(칸)', '(*) 기억의 색 농도(%)');
+
+      const sheet1Rows = [
+        [`🗓️ ${year}년 ${month}월 월간 시간 모자이크 (1칸 = 1시간 · 10분 6칸 집약)`],
+        headerRow
+      ];
+      const sheet1CellStyles = []; // { r, c, bgHex, borderType }
+
+      // -------------------------------------------------------------------------
+      // 시트 2: 월간_일자별_세부사항 & 시트 3: 월간_물감별_통계 집계
+      // -------------------------------------------------------------------------
+      const sheet2Rows = [
+        [`📝 ${year}년 ${month}월 일자별 시간 구간 및 세부사항 기록`],
+        ['날짜', '요일', '시간 구간', '소요 시간(분)', '소요 시간(h)', '물감(할 일) 이름', '색상(HEX)', '테두리 구분', '세부사항(메모)']
+      ];
+      const sheet2PaintStyles = [];
+
+      const monthlyPaintStats = {};
+      let totalMonthlyPaintedSlots = 0;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dStr = String(d).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dStr}`;
+        const weekday = getWeekdayKor(dateStr);
+        const grid = state.dayGrids[dateStr] || [];
+        const rowIndexInSheet1 = d + 1; // 0: 타이틀, 1: 헤더, 2~: 각 날짜
+
+        const rowCells = [dateStr, `${weekday}요일`];
+        let dayPaintedSlots = 0;
+
+        for (let h = 0; h < 24; h++) {
+          const startSlot = h * 6;
+          const colorCounts = {};
+          const colorOrder = [];
+          let futureCount = 0;
+          let goldCount = 0;
+          let blackCount = 0;
+          const hourNotes = [];
+
+          for (let m = 0; m < 6; m++) {
+            const idx = startSlot + m;
+            const status = getTimeSlotStatus(dateStr, idx);
+            const pid = grid[idx];
+            const paint = getPaintById(pid, dateStr);
+            const note = getNoteForSlot(dateStr, idx);
+
+            if (status === 'future' && (!paint || state.lockFutureTime)) {
+              futureCount++;
+            } else if (paint) {
+              dayPaintedSlots++;
+              totalMonthlyPaintedSlots++;
+              const slotBorder = getSlotBorderType(dateStr, idx, paint);
+              if (slotBorder === 'gold') goldCount++;
+              else if (slotBorder === 'black') blackCount++;
+
+              if (!colorCounts[paint.id]) {
+                colorCounts[paint.id] = { count: 0, name: paint.name, color: paint.color };
+                colorOrder.push(paint.id);
+              }
+              colorCounts[paint.id].count++;
+
+              if (!monthlyPaintStats[paint.id]) {
+                monthlyPaintStats[paint.id] = {
+                  name: paint.name,
+                  color: paint.color,
+                  defaultBorder: paint.borderType,
+                  slots: 0,
+                  goldSlots: 0,
+                  blackSlots: 0,
+                  noneSlots: 0
+                };
+              }
+              monthlyPaintStats[paint.id].slots++;
+              if (slotBorder === 'gold') monthlyPaintStats[paint.id].goldSlots++;
+              else if (slotBorder === 'black') monthlyPaintStats[paint.id].blackSlots++;
+              else monthlyPaintStats[paint.id].noneSlots++;
+
+              if (note && !hourNotes.includes(note)) hourNotes.push(note);
+            }
+          }
+
+          if (colorOrder.length === 0) {
+            if (futureCount === 6) {
+              rowCells.push('미래');
+              sheet1CellStyles.push({ r: rowIndexInSheet1, c: h + 2, bgHex: 'DCFCE7', borderType: 'none', textHex: '15803D' });
+            } else {
+              rowCells.push('');
+            }
+          } else {
+            // 가장 많이 칠해진 대표 물감 색상 찾기
+            let dominantPaint = colorCounts[colorOrder[0]];
+            for (const pidKey of colorOrder) {
+              if (colorCounts[pidKey].count > dominantPaint.count) {
+                dominantPaint = colorCounts[pidKey];
+              }
+            }
+            const parts = colorOrder.map(pidKey => `${colorCounts[pidKey].name}(${colorCounts[pidKey].count}/6)`);
+            const noteStr = hourNotes.length > 0 ? ` [${hourNotes.join('·')}]` : '';
+            rowCells.push(parts.join(', ') + noteStr);
+
+            const dominantBorder = (goldCount > 0 || blackCount > 0)
+              ? (blackCount > goldCount ? 'black' : 'gold')
+              : 'none';
+
+            sheet1CellStyles.push({
+              r: rowIndexInSheet1,
+              c: h + 2,
+              bgHex: cleanHex6(dominantPaint.color, 'F59E0B'),
+              borderType: dominantBorder
+            });
+          }
+        }
+
+        const mem = computeDayMemorySummary(dateStr);
+        const memLabel = mem.hasData
+          ? `황금 ${Math.round(mem.goldRatio * 100)}%`
+          : (dateStr > getTodayDateString() ? '미래(초록)' : '투명(0%)');
+
+        rowCells.push(
+          Number((dayPaintedSlots / 6).toFixed(1)),
+          mem.goldBorderCount,
+          mem.blackBorderCount,
+          mem.neutralCount || 0,
+          memLabel
+        );
+
+        if (mem.hasData && mem.colorCss) {
+          const rgbMatch = mem.colorCss.match(/\d+/g);
+          if (rgbMatch && rgbMatch.length >= 3) {
+            const hexMem = rgbMatch.slice(0, 3).map(n => Number(n).toString(16).padStart(2, '0')).join('').toUpperCase();
+            sheet1CellStyles.push({
+              r: rowIndexInSheet1,
+              c: 30,
+              bgHex: hexMem,
+              borderType: mem.goldRatio >= 0.5 ? 'gold' : 'black'
+            });
+          }
+        }
+
+        sheet1Rows.push(rowCells);
+
+        // 시트 2에 해당 날짜의 연속 색칠 구간 추가
+        const dayBlocks = extractDailyColoredBlocks(dateStr);
+        for (const b of dayBlocks) {
+          const rowIdx2 = sheet2Rows.length;
+          sheet2Rows.push([
+            dateStr,
+            `${weekday}요일`,
+            b.timeRangeStr,
+            b.durationMins,
+            Number((b.durationMins / 60).toFixed(2)),
+            b.paint.name,
+            b.paint.color,
+            getBorderLabelKor(b.borderType),
+            b.note || ''
+          ]);
+          sheet2PaintStyles.push({
+            r: rowIdx2,
+            bgHex: cleanHex6(b.paint.color, 'F59E0B'),
+            borderType: b.borderType
+          });
+        }
+      }
+
+      if (sheet2Rows.length === 2) {
+        sheet2Rows.push(['-', '-', '이 달에 기록된 시간 구간이 없습니다.', 0, 0, '-', '-', '-', '']);
+      }
+
+      // -------------------------------------------------------------------------
+      // 시트 3: 월간_물감별_통계 구성
+      // -------------------------------------------------------------------------
+      const sheet3Rows = [
+        [`📊 ${year}년 ${month}월 물감(할 일)별 시간 투자 및 테두리 통계`],
+        ['순위', '물감(할 일) 이름', '색상(HEX)', '총 칸수(10분)', '총 투자 시간(h)', '월간 기록 점유율(%)', '✨ 황금테두리(칸)', '⬛ 검은테두리(칸)', '○ 테두리없음(칸)']
+      ];
+      const sheet3Styles = [];
+
+      const sortedStats = Object.values(monthlyPaintStats).sort((a, b) => b.slots - a.slots);
+      if (sortedStats.length === 0) {
+        sheet3Rows.push(['-', '기록된 물감 데이터가 없습니다.', '-', 0, 0, 0, 0, 0, 0]);
+      } else {
+        sortedStats.forEach((st, idx) => {
+          const rIdx = sheet3Rows.length;
+          const sharePct = totalMonthlyPaintedSlots > 0
+            ? Number(((st.slots / totalMonthlyPaintedSlots) * 100).toFixed(1))
+            : 0;
+          sheet3Rows.push([
+            idx + 1,
+            st.name,
+            st.color,
+            st.slots,
+            Number((st.slots / 6).toFixed(2)),
+            sharePct,
+            st.goldSlots,
+            st.blackSlots,
+            st.noneSlots
+          ]);
+          sheet3Styles.push({
+            r: rIdx,
+            bgHex: cleanHex6(st.color, 'F59E0B'),
+            borderType: st.defaultBorder
+          });
+        });
+      }
+
+      const fileName = `시간의도화지_월간모자이크_${year}-${monthStr}.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        downloadFallbackXmlWorkbook([
+          { name: '월간_시간_모자이크', rows: sheet1Rows },
+          { name: '월간_일자별_세부사항', rows: sheet2Rows },
+          { name: '월간_물감별_통계', rows: sheet3Rows }
+        ], fileName.replace('.xlsx', '.xls'));
+        showToast(`📊 [${year}년 ${month}월] 월간 시간 모자이크 엑셀 파일을 추출했습니다!`, 'emerald');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 시트 1 스타일링
+      const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+      const ws1Cols = [{ wch: 12 }, { wch: 8 }];
+      for (let h = 0; h < 24; h++) ws1Cols.push({ wch: 16 });
+      ws1Cols.push({ wch: 13 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 18 });
+      ws1['!cols'] = ws1Cols;
+      ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 30 } }];
+
+      for (let c = 0; c <= 30; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws1[tRef]) ws1[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws1[hRef]) ws1[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+
+      for (const st of sheet1CellStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: st.c });
+        if (!ws1[ref]) continue;
+        const textHex = st.textHex || getIdealTextHexForBg(st.bgHex);
+        ws1[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 9, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 2 스타일링
+      const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+      ws2['!cols'] = [
+        { wch: 12 }, { wch: 8 }, { wch: 15 }, { wch: 14 },
+        { wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 24 }, { wch: 44 }
+      ];
+      ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+      for (let c = 0; c <= 8; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[tRef]) ws2[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws2[hRef]) ws2[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (const st of sheet2PaintStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: 5 });
+        if (!ws2[ref]) continue;
+        ws2[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: getIdealTextHexForBg(st.bgHex) } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 3 스타일링
+      const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+      ws3['!cols'] = [
+        { wch: 8 }, { wch: 26 }, { wch: 12 }, { wch: 15 },
+        { wch: 15 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }
+      ];
+      ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+      for (let c = 0; c <= 8; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws3[tRef]) ws3[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws3[hRef]) ws3[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (const st of sheet3Styles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: 1 });
+        if (!ws3[ref]) continue;
+        ws3[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: getIdealTextHexForBg(st.bgHex) } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws1, '월간_시간_모자이크');
+      XLSX.utils.book_append_sheet(wb, ws2, '월간_일자별_세부사항');
+      XLSX.utils.book_append_sheet(wb, ws3, '월간_물감별_통계');
+
+      XLSX.writeFile(wb, fileName);
+      showToast(`📊 [${year}년 ${month}월] 월간 시간 모자이크를 엑셀(.xlsx)로 추출했습니다!`, 'emerald');
+    }
+
+
+    function rgbCssToHex6(colorCss, fallback = 'FFD700') {
+      if (!colorCss) return fallback;
+      if (colorCss.startsWith('#')) return cleanHex6(colorCss, fallback);
+      const rgbMatch = String(colorCss).match(/\d+/g);
+      if (rgbMatch && rgbMatch.length >= 3) {
+        return rgbMatch
+          .slice(0, 3)
+          .map(n => Math.max(0, Math.min(255, Number(n))).toString(16).padStart(2, '0'))
+          .join('')
+          .toUpperCase();
+      }
+      return fallback;
+    }
+
+    /**
+     * [3] 연 단위: 연간 365일 기억의 화폭 엑셀(.xlsx) 추출
+     *  - 시트 1: 연간_월별_기억화폭 (1월~12월 × 1일~31일 매트릭스 + (*)기억 색상 및 농도)
+     *  - 시트 2: 연간_365일_상세기록 (1년 전체 일자별 테두리 칸수, 기억 농도, 물감·메모 요약)
+     *  - 시트 3: 연간_월별_및_물감통계 (월별 요약 테이블 + 연간 할 일/물감별 총 투자 시간 통계)
+     */
+    function exportYearlyMemoryToExcel() {
+      const year = state.selectedYear;
+      const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      const totalDays = isLeap ? 366 : 365;
+      const todayStr = getTodayDateString();
+
+      // -------------------------------------------------------------------------
+      // 시트 1: 연간_월별_기억화폭 (12개월 × 31일 매트릭스)
+      // -------------------------------------------------------------------------
+      const matrixHeader = ['월 \ 일'];
+      for (let d = 1; d <= 31; d++) {
+        matrixHeader.push(`${d}일`);
+      }
+      matrixHeader.push('기록일수', '🟨황금빛(일)', '⬛검은빛(일)', '🫧투명(일)', '🟩미래(일)', '월평균 황금농도(%)');
+
+      const sheet1Rows = [
+        [`✨ ${year}년 연간 기억의 화폭 (${totalDays}일 · 황금 테두리 vs 검은 테두리 기억 농도)`],
+        matrixHeader
+      ];
+      const sheet1CellStyles = []; // { r, c, bgHex, borderType, textHex }
+
+      // -------------------------------------------------------------------------
+      // 시트 2: 연간_365일_상세기록 & 시트 3: 월별/물감별 집계 데이터
+      // -------------------------------------------------------------------------
+      const sheet2Rows = [
+        [`📅 ${year}년 365일 일자별 기억 농도 및 시간 기록 상세`],
+        ['날짜', '요일', '상태 구분', '기록 시간(h)', '✨ 황금테두리(칸)', '⬛ 검은테두리(칸)', '○ 테두리없음(칸)', '(*) 기억의 색 농도(%)', '주요 물감 및 세부사항 요약']
+      ];
+      const sheet2MemStyles = []; // { r, bgHex, borderType, textHex }
+
+      const monthlySummaries = [];
+      const yearlyPaintStats = {};
+      let totalYearlyPaintedSlots = 0;
+
+      for (let m = 1; m <= 12; m++) {
+        const mStr = String(m).padStart(2, '0');
+        const daysInM = new Date(year, m, 0).getDate();
+        const matrixRowIdx = m + 1; // 0: 타이틀, 1: 헤더, 2~13: 1월~12월
+        const mRow = [`${m}월`];
+
+        let mRecordedDays = 0;
+        let mGoldenDays = 0;
+        let mDarkDays = 0;
+        let mTransparentDays = 0;
+        let mFutureDays = 0;
+        let mGoldRatioSum = 0;
+        let mPaintedSlots = 0;
+
+        for (let d = 1; d <= 31; d++) {
+          if (d > daysInM) {
+            mRow.push('-');
+            sheet1CellStyles.push({
+              r: matrixRowIdx,
+              c: d,
+              bgHex: 'F5F5F4',
+              borderType: 'none',
+              textHex: 'A8A29E'
+            });
+            continue;
+          }
+
+          const dStr = String(d).padStart(2, '0');
+          const dateStr = `${year}-${mStr}-${dStr}`;
+          const weekday = getWeekdayKor(dateStr);
+          const grid = state.dayGrids[dateStr] || [];
+          const mem = computeDayMemorySummary(dateStr);
+
+          // 일자별 물감 및 메모 집계
+          let daySlots = 0;
+          const dayPaintCounts = {};
+          const dayNotes = [];
+
+          for (let s = 0; s < 144; s++) {
+            const st = getTimeSlotStatus(dateStr, s);
+            if (st === 'future' && state.lockFutureTime) continue;
+            const pid = grid[s];
+            const paint = getPaintById(pid, dateStr);
+            if (!paint) continue;
+
+            daySlots++;
+            mPaintedSlots++;
+            totalYearlyPaintedSlots++;
+
+            const slotBorder = getSlotBorderType(dateStr, s, paint);
+            dayPaintCounts[paint.name] = (dayPaintCounts[paint.name] || 0) + 1;
+
+            if (!yearlyPaintStats[paint.id]) {
+              yearlyPaintStats[paint.id] = {
+                name: paint.name,
+                color: paint.color,
+                defaultBorder: paint.borderType,
+                slots: 0,
+                goldSlots: 0,
+                blackSlots: 0,
+                noneSlots: 0
+              };
+            }
+            yearlyPaintStats[paint.id].slots++;
+            if (slotBorder === 'gold') yearlyPaintStats[paint.id].goldSlots++;
+            else if (slotBorder === 'black') yearlyPaintStats[paint.id].blackSlots++;
+            else yearlyPaintStats[paint.id].noneSlots++;
+
+            const note = getNoteForSlot(dateStr, s);
+            if (note && !dayNotes.includes(note)) dayNotes.push(note);
+          }
+
+          let statusLabel = '';
+          let memPctVal = '';
+
+          if (dateStr > todayStr && !mem.hasData) {
+            mFutureDays++;
+            mRow.push('미래');
+            statusLabel = '미래 (초록)';
+            memPctVal = '미래';
+            sheet1CellStyles.push({
+              r: matrixRowIdx,
+              c: d,
+              bgHex: 'DCFCE7',
+              borderType: 'none',
+              textHex: '15803D'
+            });
+          } else if (!mem.hasData) {
+            mTransparentDays++;
+            mRow.push('투명');
+            statusLabel = daySlots > 0 ? '테두리없음 기록' : '투명 (기록없음)';
+            memPctVal = '투명(0%)';
+          } else {
+            mRecordedDays++;
+            const pct = Math.round(mem.goldRatio * 100);
+            mGoldRatioSum += pct;
+            if (mem.goldRatio >= 0.5) mGoldenDays++;
+            else mDarkDays++;
+
+            mRow.push(`${pct}%`);
+            statusLabel = mem.goldRatio >= 0.5 ? '🟨 황금빛 기억' : '⬛ 검은빛 기억';
+            memPctVal = `황금 ${pct}%`;
+
+            const hexBg = rgbCssToHex6(mem.colorCss, 'F59E0B');
+            const bType = mem.goldRatio >= 0.5 ? 'gold' : 'black';
+            sheet1CellStyles.push({
+              r: matrixRowIdx,
+              c: d,
+              bgHex: hexBg,
+              borderType: bType
+            });
+          }
+
+          const paintSummaryParts = Object.entries(dayPaintCounts)
+            .sort((a, b) => b[1] - a[1])
+            .map(([pName, cnt]) => `${pName}(${(cnt / 6).toFixed(1)}h)`);
+          const noteSummaryStr = dayNotes.length > 0 ? ` | 📝 ${dayNotes.join(' · ')}` : '';
+          const fullSummary = paintSummaryParts.join(', ') + noteSummaryStr;
+
+          const s2RowIdx = sheet2Rows.length;
+          sheet2Rows.push([
+            dateStr,
+            `${weekday}요일`,
+            statusLabel,
+            Number((daySlots / 6).toFixed(1)),
+            mem.goldBorderCount,
+            mem.blackBorderCount,
+            mem.neutralCount || 0,
+            memPctVal,
+            fullSummary || '-'
+          ]);
+
+          if (mem.hasData && mem.colorCss) {
+            sheet2MemStyles.push({
+              r: s2RowIdx,
+              bgHex: rgbCssToHex6(mem.colorCss, 'F59E0B'),
+              borderType: mem.goldRatio >= 0.5 ? 'gold' : 'black'
+            });
+          } else if (dateStr > todayStr && !mem.hasData) {
+            sheet2MemStyles.push({
+              r: s2RowIdx,
+              bgHex: 'DCFCE7',
+              borderType: 'none',
+              textHex: '15803D'
+            });
+          }
+        }
+
+        const avgGoldPct = mRecordedDays > 0 ? Number((mGoldRatioSum / mRecordedDays).toFixed(1)) : 0;
+        mRow.push(mRecordedDays, mGoldenDays, mDarkDays, mTransparentDays, mFutureDays, mRecordedDays > 0 ? `${avgGoldPct}%` : '-');
+        sheet1Rows.push(mRow);
+
+        monthlySummaries.push([
+          `${m}월`,
+          daysInM,
+          mRecordedDays,
+          Number((mPaintedSlots / 6).toFixed(1)),
+          mGoldenDays,
+          mDarkDays,
+          mTransparentDays,
+          mFutureDays,
+          mRecordedDays > 0 ? `${avgGoldPct}%` : '-'
+        ]);
+      }
+
+      // -------------------------------------------------------------------------
+      // 시트 3: 연간_월별_및_물감통계 구성
+      // -------------------------------------------------------------------------
+      const sheet3Rows = [
+        [`📊 ${year}년 월별 기억 요약 및 연간 물감(할 일) 투자 통계`],
+        ['월', '총 일수', '기억 평가 일수', '총 기록시간(h)', '🟨 황금빛 날(일)', '⬛ 검은빛 날(일)', '🫧 투명 과거(일)', '🟩 미래(일)', '월평균 황금농도(%)'],
+        ...monthlySummaries,
+        [],
+        ['🏆 순위', '물감(할 일) 이름', '색상(HEX)', '총 칸수(10분)', '총 투자 시간(h)', '연간 점유율(%)', '✨ 황금테두리(칸)', '⬛ 검은테두리(칸)', '○ 테두리없음(칸)']
+      ];
+      const paintHeaderRowInS3 = sheet3Rows.length - 1;
+      const sheet3PaintStyles = [];
+
+      const sortedYearlyPaints = Object.values(yearlyPaintStats).sort((a, b) => b.slots - a.slots);
+      if (sortedYearlyPaints.length === 0) {
+        sheet3Rows.push(['-', '이 해에 기록된 물감 데이터가 없습니다.', '-', 0, 0, 0, 0, 0, 0]);
+      } else {
+        sortedYearlyPaints.forEach((st, idx) => {
+          const rIdx = sheet3Rows.length;
+          const sharePct = totalYearlyPaintedSlots > 0
+            ? Number(((st.slots / totalYearlyPaintedSlots) * 100).toFixed(1))
+            : 0;
+          sheet3Rows.push([
+            idx + 1,
+            st.name,
+            st.color,
+            st.slots,
+            Number((st.slots / 6).toFixed(2)),
+            sharePct,
+            st.goldSlots,
+            st.blackSlots,
+            st.noneSlots
+          ]);
+          sheet3PaintStyles.push({
+            r: rIdx,
+            bgHex: cleanHex6(st.color, 'F59E0B'),
+            borderType: st.defaultBorder
+          });
+        });
+      }
+
+      const fileName = `시간의도화지_연간화폭_${year}.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        downloadFallbackXmlWorkbook([
+          { name: '연간_월별_기억화폭', rows: sheet1Rows },
+          { name: '연간_365일_상세기록', rows: sheet2Rows },
+          { name: '연간_월별_및_물감통계', rows: sheet3Rows }
+        ], fileName.replace('.xlsx', '.xls'));
+        showToast(`📊 [${year}년] 연간 365일 기억의 화폭 엑셀 파일을 추출했습니다!`, 'emerald');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 시트 1 스타일링
+      const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+      const ws1Cols = [{ wch: 8 }];
+      for (let d = 1; d <= 31; d++) ws1Cols.push({ wch: 7.5 });
+      ws1Cols.push({ wch: 10 }, { wch: 13 }, { wch: 13 }, { wch: 11 }, { wch: 11 }, { wch: 16 });
+      ws1['!cols'] = ws1Cols;
+      ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 37 } }];
+
+      for (let c = 0; c <= 37; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws1[tRef]) ws1[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws1[hRef]) ws1[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (let m = 1; m <= 12; m++) {
+        const mRef = XLSX.utils.encode_cell({ r: m + 1, c: 0 });
+        if (ws1[mRef]) ws1[mRef].s = makeDefaultCellStyle('center', true);
+      }
+      for (const st of sheet1CellStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: st.c });
+        if (!ws1[ref]) continue;
+        const textHex = st.textHex || getIdealTextHexForBg(st.bgHex);
+        ws1[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 9, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 2 스타일링
+      const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+      ws2['!cols'] = [
+        { wch: 13 }, { wch: 8 }, { wch: 16 }, { wch: 13 },
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 48 }
+      ];
+      ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+      for (let c = 0; c <= 8; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[tRef]) ws2[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws2[hRef]) ws2[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (const st of sheet2MemStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: 7 });
+        if (!ws2[ref]) continue;
+        const textHex = st.textHex || getIdealTextHexForBg(st.bgHex);
+        ws2[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 9.5, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 3 스타일링
+      const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+      ws3['!cols'] = [
+        { wch: 10 }, { wch: 24 }, { wch: 14 }, { wch: 15 },
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 18 }
+      ];
+      ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+      for (let c = 0; c <= 8; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws3[tRef]) ws3[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws3[hRef]) ws3[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+        const phRef = XLSX.utils.encode_cell({ r: paintHeaderRowInS3, c });
+        if (ws3[phRef]) ws3[phRef].s = makeHeaderCellStyle('44403C', 'FFFFFF');
+      }
+      for (const st of sheet3PaintStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: 1 });
+        if (!ws3[ref]) continue;
+        ws3[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: getIdealTextHexForBg(st.bgHex) } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws1, '연간_월별_기억화폭');
+      XLSX.utils.book_append_sheet(wb, ws2, '연간_365일_상세기록');
+      XLSX.utils.book_append_sheet(wb, ws3, '연간_월별_및_물감통계');
+
+      XLSX.writeFile(wb, fileName);
+      showToast(`📊 [${year}년] 연간 365일 기억의 화폭을 엑셀(.xlsx)로 추출했습니다!`, 'emerald');
+    }
+
+    /**
+     * [4] 전체 단위: 일생의 뿌리와 줄기 네트워크 엑셀(.xlsx) 추출
+     *  - 시트 1: 생애_연령별_분기매트릭스 (0세~기대수명 × 1~4분기 기간 및 기억 농도 매트릭스)
+     *  - 시트 2: 생애_전체분기_상세목록 (전체 3개월 분기 잎사귀 #1~#N 상세 기록)
+     *  - 시트 3: 생애_연령대별_요약통계 (10년 단위 연령대별 분기 수 및 황금 기억 통계)
+     */
+    function exportLifeNetworkToExcel() {
+      const birth = new Date(state.birthDate + 'T00:00:00');
+      const totalQuarters = state.lifeExpectancy * 4;
+      const now = new Date();
+
+      // -------------------------------------------------------------------------
+      // 시트 1: 생애_연령별_분기매트릭스 (0세 ~ 기대수명-1세 행 × 1~4분기 열)
+      // -------------------------------------------------------------------------
+      const shineNotice = state.isGoldenShineActive ? ' [🌟 빛나기 모드 적용 중]' : '';
+      const sheet1Rows = [
+        [`🌳 일생의 뿌리와 줄기 네트워크 (생년월일: ${state.birthDate} · 기대수명: ${state.lifeExpectancy}세 · 총 ${totalQuarters}개 분기 잎사귀)${shineNotice}`],
+        ['나이(세)', '연령대', '1분기 기간', '1분기 기억농도', '2분기 기간', '2분기 기억농도', '3분기 기간', '3분기 기억농도', '4분기 기간', '4분기 기억농도', '해당 나이 평균 황금농도(%)']
+      ];
+      const sheet1CellStyles = []; // { r, c, bgHex, borderType, textHex }
+
+      // -------------------------------------------------------------------------
+      // 시트 2: 생애_전체분기_상세목록 & 시트 3: 10년 단위 연령대 통계 데이터
+      // -------------------------------------------------------------------------
+      const sheet2Rows = [
+        [`🍃 생애 전체 3개월 분기(잎사귀) 상세 기록 (#1 ~ #${totalQuarters})${shineNotice}`],
+        ['잎 번호(#)', '나이(세)', '분기', '기간 (시작월~종료월)', '상태 구분', '기록 기준/일수', '(*) 황금 기억 농도(%)', '기억 색상(HEX)']
+      ];
+      const sheet2CellStyles = []; // { r, bgHex, borderType, textHex }
+
+      const decadeStats = {};
+
+      for (let age = 0; age < state.lifeExpectancy; age++) {
+        const decadeKey = `${Math.floor(age / 10) * 10}대 (${Math.floor(age / 10) * 10}~${Math.min(state.lifeExpectancy - 1, Math.floor(age / 10) * 10 + 9)}세)`;
+        if (!decadeStats[decadeKey]) {
+          decadeStats[decadeKey] = {
+            label: decadeKey,
+            totalQ: 0,
+            passedQ: 0,
+            goldenQ: 0,
+            darkQ: 0,
+            emptyPastQ: 0,
+            futureQ: 0,
+            goldPctSum: 0,
+            recordedQCount: 0
+          };
+        }
+
+        const s1RowIdx = age + 2; // 0: 타이틀, 1: 헤더, 2~: 각 나이
+        const ageRow = [`${age}세`, `${Math.floor(age / 10) * 10}대`];
+        let ageGoldPctSum = 0;
+        let ageRecordedQ = 0;
+
+        for (let qInYear = 0; qInYear < 4; qInYear++) {
+          const qIndex = age * 4 + qInYear;
+          const qStart = new Date(birth);
+          qStart.setMonth(birth.getMonth() + qIndex * 3);
+          const qEnd = new Date(qStart);
+          qEnd.setMonth(qStart.getMonth() + 3);
+          qEnd.setDate(qEnd.getDate() - 1);
+
+          const periodStr = `${formatDateDot(qStart)} ~ ${formatDateDot(qEnd)}`;
+          const memInfo = getQuarterMemoryAverage(qStart, qEnd, qIndex);
+          const dStat = decadeStats[decadeKey];
+          dStat.totalQ++;
+
+          if (qEnd < now) dStat.passedQ++;
+
+          let cellLabel = '';
+          let statusKor = '';
+          let hexColor = '-';
+
+          if (memInfo.status === 'future') {
+            dStat.futureQ++;
+            cellLabel = '🌿 미래(초록)';
+            statusKor = '🌿 푸른 신록 (미래)';
+            hexColor = '#65C428';
+            sheet1CellStyles.push({
+              r: s1RowIdx,
+              c: 2 + qInYear * 2 + 1,
+              bgHex: 'DCFCE7',
+              borderType: 'none',
+              textHex: '15803D'
+            });
+          } else if (memInfo.status === 'past_empty' || memInfo.status === 'current_empty') {
+            dStat.emptyPastQ++;
+            const isCurr = memInfo.status === 'current_empty';
+            cellLabel = isCurr ? '❤️ 현재(투명)' : '🫧 투명 과거';
+            statusKor = isCurr ? '❤️ 현재 분기 (기록 없음)' : '🫧 투명 과거 (기록 없음)';
+          } else {
+            const pct = Math.round(memInfo.goldRatio * 100);
+            ageGoldPctSum += pct;
+            ageRecordedQ++;
+            dStat.recordedQCount++;
+            dStat.goldPctSum += pct;
+
+            if (memInfo.goldRatio >= 0.5) dStat.goldenQ++;
+            else dStat.darkQ++;
+
+            const isCurr = memInfo.status === 'current';
+            cellLabel = `${isCurr ? '❤️ ' : ''}황금 ${pct}%`;
+            statusKor = isCurr
+              ? '❤️ 현재 분기 (기록됨)'
+              : (memInfo.goldRatio >= 0.5 ? '🟨 황금빛 기억 잎사귀' : '⬛ 검은빛 기억 잎사귀');
+
+            const bgHex = rgbCssToHex6(memInfo.colorCss, 'FFD700');
+            hexColor = '#' + bgHex;
+            const bType = memInfo.goldRatio >= 0.5 ? 'gold' : 'black';
+
+            sheet1CellStyles.push({
+              r: s1RowIdx,
+              c: 2 + qInYear * 2 + 1,
+              bgHex,
+              borderType: bType
+            });
+          }
+
+          ageRow.push(periodStr, cellLabel);
+
+          const s2RowIdx = sheet2Rows.length;
+          sheet2Rows.push([
+            qIndex + 1,
+            `${age}세`,
+            `${qInYear + 1}분기`,
+            periodStr,
+            statusKor,
+            memInfo.sampleCount || '-',
+            memInfo.goldRatio !== null ? `${Math.round(memInfo.goldRatio * 100)}%` : '-',
+            hexColor
+          ]);
+
+          if (memInfo.goldRatio !== null && memInfo.colorCss) {
+            sheet2CellStyles.push({
+              r: s2RowIdx,
+              bgHex: rgbCssToHex6(memInfo.colorCss, 'FFD700'),
+              borderType: memInfo.goldRatio >= 0.5 ? 'gold' : 'black'
+            });
+          } else if (memInfo.status === 'future') {
+            sheet2CellStyles.push({
+              r: s2RowIdx,
+              bgHex: 'DCFCE7',
+              borderType: 'none',
+              textHex: '15803D'
+            });
+          }
+        }
+
+        const ageAvgStr = ageRecordedQ > 0 ? `${(ageGoldPctSum / ageRecordedQ).toFixed(1)}%` : '-';
+        ageRow.push(ageAvgStr);
+        sheet1Rows.push(ageRow);
+      }
+
+      // -------------------------------------------------------------------------
+      // 시트 3: 생애_연령대별_요약통계 구성
+      // -------------------------------------------------------------------------
+      const sheet3Rows = [
+        [`📊 일생의 뿌리와 줄기 네트워크 — 10년 단위 연령대별 요약 통계 (생년월일: ${state.birthDate} · 기대수명: ${state.lifeExpectancy}세)`],
+        ['연령대 구간', '전체 잎(분기) 수', '지나온 분기 수', '진행률(%)', '🟨 황금빛 분기(≥50%)', '⬛ 검은빛 분기(<50%)', '🫧 투명 과거(기록없음)', '🌿 푸른 신록(미래)', '평균 황금 기억 농도(%)']
+      ];
+
+      Object.values(decadeStats).forEach(ds => {
+        const progressPct = ds.totalQ > 0 ? Number(((ds.passedQ / ds.totalQ) * 100).toFixed(1)) : 0;
+        const avgGold = ds.recordedQCount > 0 ? `${(ds.goldPctSum / ds.recordedQCount).toFixed(1)}%` : '-';
+        sheet3Rows.push([
+          ds.label,
+          ds.totalQ,
+          ds.passedQ,
+          progressPct,
+          ds.goldenQ,
+          ds.darkQ,
+          ds.emptyPastQ,
+          ds.futureQ,
+          avgGold
+        ]);
+      });
+
+      const fileName = `시간의도화지_생애네트워크_${state.birthDate}_${state.lifeExpectancy}년.xlsx`;
+
+      if (typeof XLSX === 'undefined') {
+        downloadFallbackXmlWorkbook([
+          { name: '생애_연령별_분기매트릭스', rows: sheet1Rows },
+          { name: '생애_전체분기_상세목록', rows: sheet2Rows },
+          { name: '생애_연령대별_요약통계', rows: sheet3Rows }
+        ], fileName.replace('.xlsx', '.xls'));
+        showToast(`📊 생애 뿌리·줄기 네트워크 엑셀 파일을 추출했습니다!`, 'emerald');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // 시트 1 스타일링
+      const ws1 = XLSX.utils.aoa_to_sheet(sheet1Rows);
+      ws1['!cols'] = [
+        { wch: 10 }, { wch: 10 },
+        { wch: 18 }, { wch: 16 },
+        { wch: 18 }, { wch: 16 },
+        { wch: 18 }, { wch: 16 },
+        { wch: 18 }, { wch: 16 },
+        { wch: 20 }
+      ];
+      ws1['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }];
+
+      for (let c = 0; c <= 10; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws1[tRef]) ws1[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws1[hRef]) ws1[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (const st of sheet1CellStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: st.c });
+        if (!ws1[ref]) continue;
+        const textHex = st.textHex || getIdealTextHexForBg(st.bgHex);
+        ws1[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 9.5, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 2 스타일링
+      const ws2 = XLSX.utils.aoa_to_sheet(sheet2Rows);
+      ws2['!cols'] = [
+        { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 20 },
+        { wch: 24 }, { wch: 18 }, { wch: 20 }, { wch: 15 }
+      ];
+      ws2['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }];
+      for (let c = 0; c <= 7; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws2[tRef]) ws2[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws2[hRef]) ws2[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+      for (const st of sheet2CellStyles) {
+        const ref = XLSX.utils.encode_cell({ r: st.r, c: 6 });
+        if (!ws2[ref]) continue;
+        const textHex = st.textHex || getIdealTextHexForBg(st.bgHex);
+        ws2[ref].s = {
+          fill: { patternType: 'solid', fgColor: { rgb: st.bgHex } },
+          font: { name: '맑은 고딕', sz: 9.5, bold: true, color: { rgb: textHex } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: makeExcelBorderObj(st.borderType)
+        };
+      }
+
+      // 시트 3 스타일링
+      const ws3 = XLSX.utils.aoa_to_sheet(sheet3Rows);
+      ws3['!cols'] = [
+        { wch: 18 }, { wch: 16 }, { wch: 15 }, { wch: 13 },
+        { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 22 }
+      ];
+      ws3['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }];
+      for (let c = 0; c <= 8; c++) {
+        const tRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws3[tRef]) ws3[tRef].s = makeHeaderCellStyle('1C1917', 'FBBF24');
+        const hRef = XLSX.utils.encode_cell({ r: 1, c });
+        if (ws3[hRef]) ws3[hRef].s = makeHeaderCellStyle('292524', 'FDE68A');
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws1, '생애_연령별_분기매트릭스');
+      XLSX.utils.book_append_sheet(wb, ws2, '생애_전체분기_상세목록');
+      XLSX.utils.book_append_sheet(wb, ws3, '생애_연령대별_요약통계');
+
+      XLSX.writeFile(wb, fileName);
+      showToast(`📊 생애 뿌리·줄기 네트워크(${totalQuarters}개 분기)를 엑셀(.xlsx)로 추출했습니다!`, 'emerald');
+    }
+
     // 키보드 단축키: P = 원형 팔레트 열기/닫기, E = 지우개 토글, ESC = 팔레트/팝오버 닫기
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
@@ -5087,6 +6682,12 @@ if __name__ == "__main__":
       document.getElementById('date-picker').value = state.selectedDate;
       document.getElementById('birth-date-input').value = state.birthDate;
       document.getElementById('life-expectancy-input').value = state.lifeExpectancy;
+
+      const initPaint = getPaintById(state.activePaintId, state.selectedDate) || state.fixedPaints[0];
+      if (initPaint) {
+        state.brushBorderCycleStep = 0;
+        state.activeBrushBorderType = initPaint.borderType || 'gold';
+      }
 
       initArtistColorSwatches();
       initPaletteDrag();
