@@ -5,14 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>시간의 도화지 — Artist's Desk & Time Canvas</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js" onerror="var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';document.head.appendChild(s);"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --heartbeat-scale: 1;
-      --heartbeat-glow: 0;
       --desk-bg: #f0ebe1;
       --paper-bg: #fcfaf5;
       --ink-dark: #1c1917;
@@ -71,14 +68,21 @@
     }
 
     /* 현재 시간이 위치한 칸 - 건강한 사람의 심장박동 동기화 */
+    @keyframes currentCellHeartbeat {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.5), inset 0 0 0 2.5px #ef4444;
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 0 22px rgba(239, 68, 68, 0.92), inset 0 0 0 2.5px #ef4444;
+      }
+    }
     .current-heartbeat-cell {
       position: relative;
       z-index: 20 !important;
-      transform: scale(var(--heartbeat-scale));
-      box-shadow:
-        0 0 calc(8px + var(--heartbeat-glow) * 16px) rgba(239, 68, 68, calc(0.5 + var(--heartbeat-glow) * 0.45)),
-        inset 0 0 0 2.5px #ef4444 !important;
-      transition: transform 0.04s linear;
+      will-change: transform, box-shadow;
+      animation: currentCellHeartbeat 2.75s ease-in-out infinite;
     }
 
     /* 물감 테두리 스타일: 긍정(황금색 테두리) vs 부정(검은색 테두리) */
@@ -300,14 +304,22 @@
             <span class="text-[10px] font-bold uppercase tracking-wider text-stone-400">Sheet 01 · Freeform Time Sketch</span>
             <h2 class="serif-title text-lg font-bold text-stone-900">원형 하얀색 도화지</h2>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button onclick="toggleRadialGuide()" id="btn-radial-guide" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300/80 transition" title="중앙에서 퍼지는 방사형 원들로 구성된 정사각형 그리드 가이드">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <div class="flex items-center bg-stone-100 rounded-full p-0.5 border border-stone-300/80">
+              <button onclick="undoLastAction()" class="undo-action-btn px-2 py-0.5 rounded-full text-[11px] font-bold text-stone-700 hover:bg-stone-200/80 transition opacity-40 cursor-not-allowed" disabled title="되돌리기 (Ctrl+Z)">
+                ↩ 되돌리기
+              </button>
+              <button onclick="redoLastAction()" class="redo-action-btn px-1.5 py-0.5 rounded-full text-[11px] font-bold text-stone-700 hover:bg-stone-200/80 transition opacity-40 cursor-not-allowed" disabled title="다시 실행 (Ctrl+Y)">
+                ↪
+              </button>
+            </div>
+            <button onclick="toggleRadialGuide()" id="btn-radial-guide" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300/80 transition cursor-pointer" title="중앙에서 퍼지는 방사형 원들로 구성된 정사각형 그리드 가이드">
               🔘 방사형 그리드
             </button>
-            <button onclick="autoSyncCircleFromGrid()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition" title="우측 시간 그리드 비율을 원형 도화지에 반영">
+            <button onclick="autoSyncCircleFromGrid()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 transition cursor-pointer" title="우측 시간 그리드 비율을 원형 도화지에 반영">
               🔄 그리드 투영
             </button>
-            <button onclick="clearCircularCanvas()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-500 border border-stone-200 transition">
+            <button onclick="clearCircularCanvas()" class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-500 border border-stone-200 transition cursor-pointer">
               비우기
             </button>
           </div>
@@ -350,6 +362,14 @@
               </button>
               <button onclick="setGridInteractionMode('note')" id="btn-grid-mode-note" class="px-2.5 py-1 rounded-full font-semibold text-stone-600 hover:text-stone-900 transition cursor-pointer" title="색칠된 칸을 클릭해 세부사항을 적습니다 (색칠 모드에서도 우클릭/더블클릭으로 바로 입력 가능)">
                 📝 세부사항 적기
+              </button>
+            </div>
+            <div class="flex items-center bg-stone-100 rounded-full p-0.5 border border-stone-300/80">
+              <button onclick="undoLastAction()" class="undo-action-btn px-2 py-0.5 rounded-full text-[11px] font-bold text-stone-700 hover:bg-stone-200/80 transition opacity-40 cursor-not-allowed" disabled title="되돌리기 (Ctrl+Z)">
+                ↩ 되돌리기
+              </button>
+              <button onclick="redoLastAction()" class="redo-action-btn px-1.5 py-0.5 rounded-full text-[11px] font-bold text-stone-700 hover:bg-stone-200/80 transition opacity-40 cursor-not-allowed" disabled title="다시 실행 (Ctrl+Y)">
+                ↪
               </button>
             </div>
             <button onclick="exportDailyGridToExcel()" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-2xs transition flex items-center gap-1 cursor-pointer" title="오늘의 시간 그리드 도화지와 세부사항을 엑셀(.xlsx) 파일로 추출합니다">
@@ -590,6 +610,17 @@
         <span>🫧</span>
         <span class="hidden sm:inline">지우개</span>
       </button>
+
+      <!-- 되돌리기(Undo) & 다시 실행(Redo) 버튼 그룹 -->
+      <div class="flex items-center gap-1 bg-stone-800/90 p-0.5 rounded-full border border-stone-600">
+        <button onclick="undoLastAction()" id="dock-undo-btn" class="undo-action-btn px-2.5 py-1 rounded-full text-xs font-bold text-stone-200 hover:bg-stone-700 hover:text-amber-300 transition flex items-center gap-1 opacity-40 cursor-not-allowed" disabled title="되돌리기 (단축키 Ctrl+Z)">
+          <span>↩</span>
+          <span class="hidden sm:inline text-[11px]">되돌리기</span>
+        </button>
+        <button onclick="redoLastAction()" id="dock-redo-btn" class="redo-action-btn px-2 py-1 rounded-full text-xs font-bold text-stone-200 hover:bg-stone-700 hover:text-amber-300 transition flex items-center opacity-40 cursor-not-allowed" disabled title="다시 실행 (단축키 Ctrl+Y / Ctrl+Shift+Z)">
+          <span>↪</span>
+        </button>
+      </div>
 
       <!-- 붓 굵기 퀵 슬라이더 -->
       <div class="hidden md:flex items-center gap-2 pl-2 border-l border-stone-700 text-xs">
@@ -926,6 +957,213 @@
     let activeNotePopoverContext = null;
     let gridCellRects = [];
     let gridTrailOffscreen = null;
+    let gridStaticOffscreen = null;
+    let isDailyGridStaticDirty = true;
+    let circleAnalysisOffscreen = null;
+    let lifeStaticOffscreen = null;
+    let isLifeStaticDirty = true;
+
+    const MIN_STROKE_DIST = 2.5;
+    const GRID_LEFT_MARGIN = 66;
+    const GRID_TOP_MARGIN = 36;
+    const GRID_CELL_W = 35;
+    const GRID_CELL_H = 17;
+    const GRID_GAP_X = 19;
+    const GRID_GAP_Y = 10.5;
+    const GRID_PITCH_X = GRID_CELL_W + GRID_GAP_X;
+    const GRID_PITCH_Y = GRID_CELL_H + GRID_GAP_Y;
+
+    const paintLookupMap = new Map();
+    const dayMemoryCache = new Map();
+
+    function invalidateDailyGridStaticCache() { isDailyGridStaticDirty = true; }
+    function invalidateLifeStaticCache() { isLifeStaticDirty = true; }
+    function invalidateDayMemoryCache(dateStr) {
+      if (dateStr) dayMemoryCache.delete(dateStr);
+      else dayMemoryCache.clear();
+      invalidateLifeStaticCache();
+    }
+
+    function formatDateISO(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function rebuildPaintLookupMap() {
+      paintLookupMap.clear();
+      DEFAULT_FAVORITE_PAINTS.forEach(p => { if (p && p.id) paintLookupMap.set(p.id, p); });
+      if (state.paintArchive) {
+        for (const pid in state.paintArchive) paintLookupMap.set(pid, state.paintArchive[pid]);
+      }
+      for (const d in state.dailyPaintsByDate) {
+        (state.dailyPaintsByDate[d] || []).forEach(p => { if (p && p.id) paintLookupMap.set(p.id, p); });
+      }
+      (state.fixedPaints || []).forEach(p => { if (p && p.id) paintLookupMap.set(p.id, p); });
+    }
+
+    function normalizeStrokeRecord(s, dateStr = state.selectedDate) {
+      if (!s) return null;
+      if (Array.isArray(s)) {
+        const [x1, y1, x2, y2, r, idOrColor, isEraserFlag] = s;
+        const p = getPaintById(idOrColor, dateStr);
+        return {
+          x1, y1, x2, y2, r,
+          paintId: p ? p.id : (typeof idOrColor === 'string' && !idOrColor.startsWith('#') ? idOrColor : null),
+          color: p ? p.color : (typeof idOrColor === 'string' && idOrColor.startsWith('#') ? idOrColor : '#f59e0b'),
+          isEraser: Boolean(isEraserFlag)
+        };
+      }
+      return s;
+    }
+
+    function createCompactStrokeTuple(x1, y1, x2, y2, r, paintIdOrColor, isEraser) {
+      return [Math.round(x1), Math.round(y1), Math.round(x2), Math.round(y2), Math.round(r), isEraser ? '' : (paintIdOrColor || '#f59e0b'), isEraser ? 1 : 0];
+    }
+
+    /***************************************************************************
+     * 1-B. 되돌리기(Undo) & 다시 실행(Redo) 히스토리 엔진 (날짜별 최대 50단계)
+     ***************************************************************************/
+    const MAX_HISTORY_STEPS = 50;
+    const undoStackByDate = {};
+    const redoStackByDate = {};
+
+    function cloneStrokeList(strokes) {
+      if (!Array.isArray(strokes)) return [];
+      return strokes.map(s => (Array.isArray(s) ? [...s] : { ...s }));
+    }
+
+    function captureDayCanvasSnapshot(dateStr = state.selectedDate, actionLabel = '작업') {
+      const grid = state.dayGrids[dateStr];
+      const borders = state.dayGridBorders && state.dayGridBorders[dateStr];
+      const notes = state.dayGridNotes && state.dayGridNotes[dateStr];
+      const gridStrokes = state.dayGridStrokesByDate[dateStr];
+      const circleStrokes = state.circleStrokesByDate[dateStr];
+
+      return {
+        dateStr,
+        actionLabel,
+        dayGrid: Array.isArray(grid) ? [...grid] : new Array(144).fill(null),
+        dayGridBorders: Array.isArray(borders) ? [...borders] : new Array(144).fill(null),
+        dayGridNotes: notes ? { ...notes } : {},
+        dayGridStrokes: cloneStrokeList(gridStrokes),
+        circleStrokes: cloneStrokeList(circleStrokes)
+      };
+    }
+
+    function pushUndoSnapshot(actionLabel = '붓질', dateStr = state.selectedDate) {
+      if (!undoStackByDate[dateStr]) undoStackByDate[dateStr] = [];
+      undoStackByDate[dateStr].push(captureDayCanvasSnapshot(dateStr, actionLabel));
+      if (undoStackByDate[dateStr].length > MAX_HISTORY_STEPS) {
+        undoStackByDate[dateStr].shift();
+      }
+      // 새로운 행위가 발생하면 해당 날짜의 다시 실행(Redo) 스택 초기화
+      redoStackByDate[dateStr] = [];
+      updateUndoRedoButtonsUI();
+    }
+
+    function applyDayCanvasSnapshot(snapshot) {
+      if (!snapshot || !snapshot.dateStr) return;
+      const d = snapshot.dateStr;
+
+      state.dayGrids[d] = [...snapshot.dayGrid];
+      if (!state.dayGridBorders) state.dayGridBorders = {};
+      state.dayGridBorders[d] = [...snapshot.dayGridBorders];
+      if (!state.dayGridNotes) state.dayGridNotes = {};
+      state.dayGridNotes[d] = { ...snapshot.dayGridNotes };
+      state.dayGridStrokesByDate[d] = cloneStrokeList(snapshot.dayGridStrokes);
+      state.circleStrokesByDate[d] = cloneStrokeList(snapshot.circleStrokes);
+
+      closeGridNotePopover();
+      invalidateDailyGridStaticCache();
+      invalidateDayMemoryCache(d);
+      saveState();
+      renderDailyGrid();
+      replayCircularStrokes();
+      if (state.currentView === 'month') renderMonthView();
+      if (state.currentView === 'year') renderYearView();
+      if (state.currentView === 'life') {
+        buildLifeNetworkGeometry();
+        drawLifeNetworkFrame();
+      }
+      updateUndoRedoButtonsUI();
+    }
+
+    function undoLastAction() {
+      const dateStr = state.selectedDate;
+      const uStack = undoStackByDate[dateStr];
+      if (!uStack || uStack.length === 0) {
+        showToast('되돌릴 이전 작업 내역이 없습니다.', 'stone');
+        return;
+      }
+
+      const targetSnapshot = uStack.pop();
+      if (!redoStackByDate[dateStr]) redoStackByDate[dateStr] = [];
+      redoStackByDate[dateStr].push(captureDayCanvasSnapshot(dateStr, targetSnapshot.actionLabel));
+      if (redoStackByDate[dateStr].length > MAX_HISTORY_STEPS) {
+        redoStackByDate[dateStr].shift();
+      }
+
+      applyDayCanvasSnapshot(targetSnapshot);
+      showToast(`↩ 되돌리기: ${targetSnapshot.actionLabel}`, 'amber');
+    }
+
+    function redoLastAction() {
+      const dateStr = state.selectedDate;
+      const rStack = redoStackByDate[dateStr];
+      if (!rStack || rStack.length === 0) {
+        showToast('다시 실행할 작업 내역이 없습니다.', 'stone');
+        return;
+      }
+
+      const targetSnapshot = rStack.pop();
+      if (!undoStackByDate[dateStr]) undoStackByDate[dateStr] = [];
+      undoStackByDate[dateStr].push(captureDayCanvasSnapshot(dateStr, targetSnapshot.actionLabel));
+      if (undoStackByDate[dateStr].length > MAX_HISTORY_STEPS) {
+        undoStackByDate[dateStr].shift();
+      }
+
+      applyDayCanvasSnapshot(targetSnapshot);
+      showToast(`↪ 다시 실행: ${targetSnapshot.actionLabel}`, 'emerald');
+    }
+
+    function updateUndoRedoButtonsUI() {
+      const dateStr = state.selectedDate;
+      const uStack = undoStackByDate[dateStr] || [];
+      const rStack = redoStackByDate[dateStr] || [];
+
+      const canUndo = uStack.length > 0;
+      const canRedo = rStack.length > 0;
+      const lastUndoLabel = canUndo ? uStack[uStack.length - 1].actionLabel : '';
+      const lastRedoLabel = canRedo ? rStack[rStack.length - 1].actionLabel : '';
+
+      document.querySelectorAll('.undo-action-btn').forEach(btn => {
+        btn.disabled = !canUndo;
+        if (canUndo) {
+          btn.classList.remove('opacity-40', 'cursor-not-allowed');
+          btn.classList.add('cursor-pointer');
+          btn.title = `되돌리기: ${lastUndoLabel} (단축키 Ctrl+Z)`;
+        } else {
+          btn.classList.add('opacity-40', 'cursor-not-allowed');
+          btn.classList.remove('cursor-pointer');
+          btn.title = '되돌릴 작업 없음 (단축키 Ctrl+Z)';
+        }
+      });
+
+      document.querySelectorAll('.redo-action-btn').forEach(btn => {
+        btn.disabled = !canRedo;
+        if (canRedo) {
+          btn.classList.remove('opacity-40', 'cursor-not-allowed');
+          btn.classList.add('cursor-pointer');
+          btn.title = `다시 실행: ${lastRedoLabel} (단축키 Ctrl+Y / Ctrl+Shift+Z)`;
+        } else {
+          btn.classList.add('opacity-40', 'cursor-not-allowed');
+          btn.classList.remove('cursor-pointer');
+          btn.title = '다시 실행할 작업 없음 (단축키 Ctrl+Y)';
+        }
+      });
+    }
 
     // 원형 팔레트 드래그 이동 상태
     let isDraggingPalette = false;
@@ -1055,6 +1293,7 @@
       for (const d in state.dailyPaintsByDate) {
         (state.dailyPaintsByDate[d] || []).forEach(p => archivePaintSnapshot(p));
       }
+      rebuildPaintLookupMap();
     }
 
     // 해당 물감 ID가 그리드 칸이나 원형 도화지 스트로크에 이미 칠해져 사용 중인지 확인
@@ -1236,19 +1475,14 @@
     // 팔레트에서 삭제되었거나 수정으로 분리된 과거 물감이라도 paintArchive에서 찾아 반환하여 칠해진 기록을 영구 유지
     function getPaintById(paintId, dateStr = state.selectedDate) {
       if (!paintId) return null;
-      const list = getAllPaintsForDate(dateStr);
-      const found = list.find(p => p.id === paintId);
-      if (found) return found;
-      for (const d in state.dailyPaintsByDate) {
-        const m = (state.dailyPaintsByDate[d] || []).find(p => p.id === paintId);
-        if (m) return m;
+      if (paintLookupMap.size === 0) rebuildPaintLookupMap();
+      const dailyList = state.dailyPaintsByDate[dateStr];
+      if (dailyList) {
+        for (let i = 0; i < dailyList.length; i++) {
+          if (dailyList[i].id === paintId) return dailyList[i];
+        }
       }
-      if (state.paintArchive && state.paintArchive[paintId]) {
-        return state.paintArchive[paintId];
-      }
-      const def = DEFAULT_FAVORITE_PAINTS.find(p => p.id === paintId);
-      if (def) return def;
-      return null;
+      return paintLookupMap.get(paintId) || null;
     }
 
     /***************************************************************************
@@ -1318,6 +1552,11 @@
      *      검은색 테두리(borderType === 'black') 칸이 적을수록 진한 황금색(#ffd700) 1칸으로 기억!
      ***************************************************************************/
     function computeDayMemorySummary(dateStr) {
+      const todayStr = getTodayDateString();
+      const cacheSlotKey = dateStr === todayStr ? getCurrentActiveSlotIndex() : 'fixed';
+      const cacheMetaKey = `${state.lockFutureTime}_${cacheSlotKey}`;
+      const cached = dayMemoryCache.get(dateStr);
+      if (cached && cached.metaKey === cacheMetaKey) return cached.result;
       const grid = state.dayGrids[dateStr];
       if (!grid) {
         return { hasData: false, goldBorderCount: 0, blackBorderCount: 0, neutralCount: 0, goldRatio: null, colorCss: null };
@@ -2124,6 +2363,8 @@
       replayCircularStrokes();
 
       paintCanvas.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        pushUndoSnapshot(state.isEraserMode ? '원형 도화지 지우개' : '원형 도화지 붓질');
         isCirclePainting = true;
         const pt = getCanvasNormalizedPoint(paintCanvas, e.clientX, e.clientY);
         lastCirclePt = pt;
@@ -2133,10 +2374,10 @@
       window.addEventListener('mousemove', (e) => {
         if (!isCirclePainting) return;
         const pt = getCanvasNormalizedPoint(paintCanvas, e.clientX, e.clientY);
-        if (lastCirclePt) {
+        if (lastCirclePt && Math.hypot(pt.x - lastCirclePt.x, pt.y - lastCirclePt.y) >= MIN_STROKE_DIST) {
           paintCircularDab(lastCirclePt.x, lastCirclePt.y, pt.x, pt.y, true);
+          lastCirclePt = pt;
         }
-        lastCirclePt = pt;
       });
 
       window.addEventListener('mouseup', () => {
@@ -2151,6 +2392,7 @@
       paintCanvas.addEventListener('touchstart', (e) => {
         if (e.touches.length > 0) {
           e.preventDefault();
+          pushUndoSnapshot(state.isEraserMode ? '원형 도화지 지우개' : '원형 도화지 붓질');
           isCirclePainting = true;
           const t = e.touches[0];
           const pt = getCanvasNormalizedPoint(paintCanvas, t.clientX, t.clientY);
@@ -2336,6 +2578,10 @@
     }
 
     function clearCircularCanvas() {
+      const existing = state.circleStrokesByDate[state.selectedDate] || [];
+      if (existing.length > 0) {
+        pushUndoSnapshot('원형 도화지 비우기');
+      }
       state.circleStrokesByDate[state.selectedDate] = [];
       saveState();
       replayCircularStrokes();
@@ -2363,6 +2609,7 @@
         return;
       }
 
+      pushUndoSnapshot('원형 도화지 그리드 투영');
       const canvas = document.getElementById('circular-paint-canvas');
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
@@ -2656,11 +2903,12 @@
     }
 
     function findGridCellAtPoint(x, y) {
-      for (const cell of gridCellRects) {
-        if (x >= cell.x - 4 && x <= cell.x + cell.w + 4 && y >= cell.y - 3 && y <= cell.y + cell.h + 3) {
-          return cell;
-        }
-      }
+      const col = Math.floor((x - GRID_LEFT_MARGIN + 4) / GRID_PITCH_X);
+      const row = Math.floor((y - GRID_TOP_MARGIN + 3) / GRID_PITCH_Y);
+      if (col < 0 || col >= 6 || row < 0 || row >= 24) return null;
+      const cell = gridCellRects[row * 6 + col];
+      if (!cell) return null;
+      if (x >= cell.x - 4 && x <= cell.x + cell.w + 4 && y >= cell.y - 3 && y <= cell.y + cell.h + 3) return cell;
       return null;
     }
 
@@ -2750,6 +2998,7 @@
         ? activeNotePopoverContext.slotIdx
         : activeNotePopoverContext.blockEnd;
 
+      pushUndoSnapshot('세부사항 메모 저장');
       setNoteForSlotRange(state.selectedDate, start, end, text);
       saveState();
       closeGridNotePopover();
@@ -2768,6 +3017,7 @@
         ? activeNotePopoverContext.slotIdx
         : activeNotePopoverContext.blockEnd;
 
+      pushUndoSnapshot('세부사항 메모 지우기');
       setNoteForSlotRange(state.selectedDate, start, end, '');
       saveState();
       closeGridNotePopover();
@@ -2779,6 +3029,10 @@
 
     // 하단 실시간 세부사항 목록에서 인라인 입력 시 즉시 반영
     function onInlineBlockNoteChange(startSlot, endSlot, value) {
+      const prevVal = getNoteForSlot(state.selectedDate, startSlot);
+      if (prevVal !== (value || '').trim()) {
+        pushUndoSnapshot('세부사항 메모 수정');
+      }
       setNoteForSlotRange(state.selectedDate, startSlot, endSlot, value);
       saveState();
       drawDailyGridCanvasFrame();
@@ -2788,6 +3042,7 @@
 
     // 같은 물감으로 칠해진 인접한 두 구간을 하나로 병합
     function mergeWithPreviousNoteBlock(prevStart, prevEnd, currStart, currEnd) {
+      pushUndoSnapshot('시간 구간 합치기');
       const prevNote = getNoteForSlot(state.selectedDate, prevStart);
       const currNote = getNoteForSlot(state.selectedDate, currStart);
       const mergedNote = [prevNote, currNote].filter(Boolean).join(' · ');
@@ -3126,6 +3381,7 @@
 
         closeGridNotePopover();
         hideDailyGridTooltip();
+        pushUndoSnapshot(state.isEraserMode ? '시간 그리드 지우개' : '시간 그리드 색칠');
         isGridPainting = true;
         lastGridPt = pt;
         hoverGridPt = pt;
@@ -3138,8 +3394,12 @@
         hoveredGridCell = findGridCellAtPoint(pt.x, pt.y);
 
         if (isGridPainting && lastGridPt) {
-          applyContinuousBrushStrokeToGrid(lastGridPt.x, lastGridPt.y, pt.x, pt.y, true);
-          lastGridPt = pt;
+          if (Math.hypot(pt.x - lastGridPt.x, pt.y - lastGridPt.y) >= MIN_STROKE_DIST) {
+            applyContinuousBrushStrokeToGrid(lastGridPt.x, lastGridPt.y, pt.x, pt.y, true);
+            lastGridPt = pt;
+          } else {
+            drawDailyGridCanvasFrame();
+          }
         } else {
           updateDailyGridTooltip(e.clientX, e.clientY, hoveredGridCell);
           drawDailyGridCanvasFrame();
@@ -3177,6 +3437,7 @@
           }
 
           closeGridNotePopover();
+          pushUndoSnapshot(state.isEraserMode ? '시간 그리드 지우개' : '시간 그리드 색칠');
           isGridPainting = true;
           lastGridPt = pt;
           hoverGridPt = pt;
@@ -3471,6 +3732,11 @@
     }
 
     function clearDayGrid() {
+      const curGrid = state.dayGrids[state.selectedDate] || [];
+      const curStrokes = state.dayGridStrokesByDate[state.selectedDate] || [];
+      if (curGrid.some(Boolean) || curStrokes.length > 0) {
+        pushUndoSnapshot('시간 그리드 비우기');
+      }
       state.dayGrids[state.selectedDate] = new Array(144).fill(null);
       if (state.dayGridBorders) {
         state.dayGridBorders[state.selectedDate] = new Array(144).fill(null);
@@ -3479,6 +3745,8 @@
         delete state.dayGridNotes[state.selectedDate];
       }
       state.dayGridStrokesByDate[state.selectedDate] = [];
+      invalidateDailyGridStaticCache();
+      invalidateDayMemoryCache(state.selectedDate);
       closeGridNotePopover();
       saveState();
       renderDailyGrid();
@@ -3916,9 +4184,10 @@
       let sumGold = 0;
       let countDays = 0;
 
+      const startIso = formatDateISO(quarterStartDate);
+      const endIso = formatDateISO(quarterEndDate);
       for (const dateStr in state.dayGrids) {
-        const d = new Date(dateStr + 'T00:00:00');
-        if (d >= quarterStartDate && d <= quarterEndDate) {
+        if (dateStr >= startIso && dateStr <= endIso) {
           const mem = computeDayMemorySummary(dateStr);
           if (mem.hasData && mem.goldRatio !== null) {
             sumGold += mem.goldRatio;
@@ -4657,9 +4926,7 @@
           }
         }
 
-        const scale = (1 + currentBreathValue * 0.08).toFixed(3);
-        document.documentElement.style.setProperty('--heartbeat-scale', scale);
-        document.documentElement.style.setProperty('--heartbeat-glow', currentBreathValue.toFixed(3));
+        // :root 매 프레임 CSS 변수 재계산 제거 완료 (GPU @keyframes로 대체)
 
         if (heartIcon) {
           heartIcon.style.transform = `scale(${(1 + currentBreathValue * 0.16).toFixed(2)})`;
@@ -4681,7 +4948,7 @@
           ecgCtx.stroke();
         }
 
-        if (state.currentView === 'day') {
+        if (state.currentView === 'day' && state.selectedDate === getTodayDateString()) {
           drawDailyGridCanvasFrame();
         }
         if (state.currentView === 'life') {
@@ -4759,6 +5026,7 @@
       state.selectedYear = parts[0];
 
       updateDateStatusBadge();
+      updateUndoRedoButtonsUI();
       renderCircularPalette();
       renderDailyGrid();
       replayCircularStrokes();
@@ -4985,10 +5253,19 @@
     }
 
     function utf8ToBase64(str) {
-      return btoa(unescape(encodeURIComponent(str)));
+      const bytes = new TextEncoder().encode(str);
+      let binary = '';
+      const chunkSize = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+      }
+      return btoa(binary);
     }
     function base64ToUtf8(b64) {
-      return decodeURIComponent(escape(atob(b64.replace(/\s/g, ''))));
+      const binary = atob(b64.replace(/\s/g, ''));
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
     }
 
     async function saveAndConnectGitHubSync() {
@@ -5216,6 +5493,25 @@
      * 15. 엑셀(.xlsx) 추출 엔진 — 일 단위 그리드 도화지 & 월 단위 시간 모자이크
      ***************************************************************************/
     const KOR_WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+    let xlsxLoadPromise = null;
+    function ensureXlsxLibraryLoaded() {
+      if (typeof XLSX !== 'undefined') return Promise.resolve(true);
+      if (xlsxLoadPromise) return xlsxLoadPromise;
+      xlsxLoadPromise = new Promise((resolve) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js';
+        s.onload = () => resolve(true);
+        s.onerror = () => {
+          const fb = document.createElement('script');
+          fb.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+          fb.onload = () => resolve(true);
+          fb.onerror = () => resolve(false);
+          document.head.appendChild(fb);
+        };
+        document.head.appendChild(s);
+      });
+      return xlsxLoadPromise;
+    }
 
     function getWeekdayKor(dateStr) {
       const d = new Date(dateStr + 'T00:00:00');
@@ -5332,7 +5628,8 @@
      *  - 시트 2: 시간대별_세부사항_목록 (연속 색칠 구간 요약 및 메모)
      *  - 시트 3: 10분_슬롯_전체데이터 (144칸 전체 상세 기록)
      */
-    function exportDailyGridToExcel() {
+    async function exportDailyGridToExcel() {
+      await ensureXlsxLibraryLoaded();
       const dateStr = state.selectedDate;
       const weekday = getWeekdayKor(dateStr);
       const grid = state.dayGrids[dateStr] || new Array(144).fill(null);
@@ -5643,7 +5940,8 @@
      *  - 시트 2: 월간_일자별_세부사항 (해당 월의 모든 색칠 구간 및 세부사항 메모)
      *  - 시트 3: 월간_물감별_통계 (해당 월의 할 일/물감별 투자 시간 및 테두리 통계)
      */
-    function exportMonthlyMosaicToExcel() {
+    async function exportMonthlyMosaicToExcel() {
+      await ensureXlsxLibraryLoaded();
       const { year, month } = state.selectedMonthYear;
       const monthStr = String(month).padStart(2, '0');
       const daysInMonth = new Date(year, month, 0).getDate();
@@ -5978,7 +6276,8 @@
      *  - 시트 2: 연간_365일_상세기록 (1년 전체 일자별 테두리 칸수, 기억 농도, 물감·메모 요약)
      *  - 시트 3: 연간_월별_및_물감통계 (월별 요약 테이블 + 연간 할 일/물감별 총 투자 시간 통계)
      */
-    function exportYearlyMemoryToExcel() {
+    async function exportYearlyMemoryToExcel() {
+      await ensureXlsxLibraryLoaded();
       const year = state.selectedYear;
       const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
       const totalDays = isLeap ? 366 : 365;
@@ -6327,7 +6626,8 @@
      *  - 시트 2: 생애_전체분기_상세목록 (전체 3개월 분기 잎사귀 #1~#N 상세 기록)
      *  - 시트 3: 생애_연령대별_요약통계 (10년 단위 연령대별 분기 수 및 황금 기억 통계)
      */
-    function exportLifeNetworkToExcel() {
+    async function exportLifeNetworkToExcel() {
+      await ensureXlsxLibraryLoaded();
       const birth = new Date(state.birthDate + 'T00:00:00');
       const totalQuarters = state.lifeExpectancy * 4;
       const now = new Date();
@@ -6588,9 +6888,26 @@
       showToast(`📊 생애 뿌리·줄기 네트워크(${totalQuarters}개 분기)를 엑셀(.xlsx)로 추출했습니다!`, 'emerald');
     }
 
-    // 키보드 단축키: P = 원형 팔레트 열기/닫기, E = 지우개 토글, ESC = 팔레트/팝오버 닫기
+    // 키보드 단축키: Ctrl+Z = 되돌리기, Ctrl+Y / Ctrl+Shift+Z = 다시 실행, P = 원형 팔레트, E = 지우개, ESC = 닫기
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (e.key === 'z' || e.key === 'Z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            redoLastAction();
+          } else {
+            undoLastAction();
+          }
+          return;
+        } else if (e.key === 'y' || e.key === 'Y') {
+          e.preventDefault();
+          redoLastAction();
+          return;
+        }
+      }
+
       if (e.key === 'p' || e.key === 'P') {
         e.preventDefault();
         toggleArtistPalette();
@@ -6629,6 +6946,7 @@
       initLifeCanvasInteractions();
 
       renderDailyGrid();
+      updateUndoRedoButtonsUI();
 
       startHeartbeatEngine();
 
