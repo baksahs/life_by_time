@@ -272,17 +272,11 @@
           <canvas id="ecg-canvas" width="46" height="16" class="rounded bg-stone-950/80"></canvas>
         </div>
 
-        <!-- 동기화 / 샘플 / 파이썬 아이콘 버튼 -->
-        <button onclick="openCloudSyncModal()" id="btn-cloud-sync" class="p-1.5 sm:px-2.5 sm:py-1 rounded-full bg-[#fcfaf5] hover:bg-white border border-stone-300/90 text-xs font-bold text-stone-700 flex items-center gap-1 shadow-2xs transition" title="PC·모바일 클라우드 동기화">
+        <!-- 동기화 버튼 -->
+        <button onclick="openCloudSyncModal()" id="btn-cloud-sync" class="p-1.5 sm:px-2.5 sm:py-1 rounded-full bg-[#fcfaf5] hover:bg-white border border-stone-300/90 text-xs font-bold text-stone-700 flex items-center gap-1 shadow-2xs transition cursor-pointer" title="PC·모바일 클라우드 동기화">
           <span id="sync-status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
           <span>☁️</span>
           <span id="sync-status-text" class="hidden xl:inline text-[11px]">동기화</span>
-        </button>
-
-
-
-        <button onclick="openPythonModal()" class="px-2.5 py-1 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-100 text-xs font-bold transition shadow-2xs" title="Python Flask + SQLite 서버 코드 보기">
-          🐍
         </button>
       </div>
 
@@ -828,31 +822,6 @@
   </div>
 
   <!-- =========================================================================
-       Python Flask + SQLite 웹 서버 소스코드 모달
-       ========================================================================= -->
-  <div id="python-modal" class="hidden fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-stone-900 text-stone-100 border border-stone-700 rounded-3xl max-w-4xl w-full max-h-[86vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="px-6 py-4 border-b border-stone-800 flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <span class="text-xl">🐍</span>
-          <div>
-            <h3 class="font-bold text-sm sm:text-base text-white">Python 웹 서버 코드 (`app.py` — Flask + SQLite)</h3>
-            <p class="text-[11px] text-stone-400">황금 테두리(긍정)·검은 테두리(부정) 및 루틴 즐겨찾기(`★`) 스키마가 반영된 파이썬 백엔드 코드입니다.</p>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="copyPythonCode()" class="px-3 py-1.5 rounded-full bg-amber-400 text-stone-950 font-bold text-xs">📋 복사</button>
-          <button onclick="downloadPythonCode()" class="px-3 py-1.5 rounded-full bg-emerald-600 text-white font-bold text-xs">💾 다운로드</button>
-          <button onclick="closePythonModal()" class="p-1.5 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs">✕</button>
-        </div>
-      </div>
-      <div class="p-5 overflow-y-auto font-mono text-xs leading-relaxed bg-stone-950 text-emerald-300 flex-1">
-        <pre id="python-code-block" class="whitespace-pre-wrap break-words"></pre>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
        메인 애플리케이션 스크립트
        ========================================================================= -->
   <script>
@@ -907,6 +876,8 @@
       fixedPaints: [...DEFAULT_FAVORITE_PAINTS],
       // ☆ 특정 날짜에만 추가된 당일 물감 목록: { 'YYYY-MM-DD': [ paintObj ] }
       dailyPaintsByDate: {},
+      // 팔레트에서 삭제되거나 수정되기 전 이미 칠해진 기록들이 참조하는 영구 물감 스냅샷 보존소
+      paintArchive: {},
 
       activePaintId: 'fix_focus',
       brushBorderCycleStep: 0,    // 0: 원래 테두리, 1: 테두리 없음(또는 1단계), 2: 반대색 테두리
@@ -1061,6 +1032,45 @@
       return 'gold';
     }
 
+    // 물감 스냅샷을 영구 보존소(paintArchive)에 저장 (팔레트에서 물감을 삭제하거나 수정해도 이미 칠해진 기록은 별개로 보존)
+    function archivePaintSnapshot(p) {
+      if (!p || !p.id) return;
+      if (!state.paintArchive) state.paintArchive = {};
+      state.paintArchive[p.id] = {
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        borderType: (p.borderType === 'gold' || p.borderType === 'black' || p.borderType === 'none') ? p.borderType : 'gold',
+        isFavorite: !!p.isFavorite,
+        isFixed: !!p.isFavorite
+      };
+    }
+
+    function syncAllPaintsToArchive() {
+      if (!state.paintArchive) state.paintArchive = {};
+      DEFAULT_FAVORITE_PAINTS.forEach(p => {
+        if (!state.paintArchive[p.id]) archivePaintSnapshot(p);
+      });
+      (state.fixedPaints || []).forEach(p => archivePaintSnapshot(p));
+      for (const d in state.dailyPaintsByDate) {
+        (state.dailyPaintsByDate[d] || []).forEach(p => archivePaintSnapshot(p));
+      }
+    }
+
+    // 해당 물감 ID가 그리드 칸이나 원형 도화지 스트로크에 이미 칠해져 사용 중인지 확인
+    function isPaintUsedInRecords(paintId) {
+      if (!paintId) return false;
+      for (const d in state.dayGrids) {
+        const grid = state.dayGrids[d];
+        if (Array.isArray(grid) && grid.includes(paintId)) return true;
+      }
+      for (const d in state.circleStrokesByDate) {
+        const strokes = state.circleStrokesByDate[d];
+        if (Array.isArray(strokes) && strokes.some(s => s.paintId === paintId)) return true;
+      }
+      return false;
+    }
+
     // 기존 저장 데이터 중 dayGridBorders가 없는 칸들을 각 시점의 물감 테두리로 고정 마이그레이션
     function ensureDayGridBordersInitialized() {
       if (!state.dayGridBorders) state.dayGridBorders = {};
@@ -1085,9 +1095,11 @@
     }
 
     function getSerializablePayload() {
+      syncAllPaintsToArchive();
       return {
         fixedPaints: state.fixedPaints,
         dailyPaintsByDate: state.dailyPaintsByDate,
+        paintArchive: state.paintArchive,
         dayGrids: state.dayGrids,
         dayGridBorders: state.dayGridBorders,
         dayGridNotes: state.dayGridNotes,
@@ -1104,6 +1116,13 @@
       if (!parsed) return;
       isApplyingRemoteState = true;
       try {
+        if (parsed.paintArchive) {
+          const normArch = {};
+          for (const pid in parsed.paintArchive) {
+            normArch[pid] = normalizePaintObject(parsed.paintArchive[pid], false);
+          }
+          state.paintArchive = normArch;
+        }
         if (parsed.fixedPaints && parsed.fixedPaints.length) {
           state.fixedPaints = parsed.fixedPaints.map(p => normalizePaintObject(p, true));
         }
@@ -1114,6 +1133,7 @@
           }
           state.dailyPaintsByDate = normDaily;
         }
+        syncAllPaintsToArchive();
         if (parsed.dayGrids) state.dayGrids = parsed.dayGrids;
         if (parsed.dayGridBorders) state.dayGridBorders = parsed.dayGridBorders;
         if (parsed.dayGridNotes) state.dayGridNotes = parsed.dayGridNotes;
@@ -1168,8 +1188,18 @@
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('TIME_CANVAS_ATELIER_V1');
-        if (!raw) return false;
+        if (!raw) {
+          syncAllPaintsToArchive();
+          return false;
+        }
         const parsed = JSON.parse(raw);
+        if (parsed.paintArchive) {
+          const normArch = {};
+          for (const pid in parsed.paintArchive) {
+            normArch[pid] = normalizePaintObject(parsed.paintArchive[pid], false);
+          }
+          state.paintArchive = normArch;
+        }
         if (parsed.fixedPaints && parsed.fixedPaints.length) {
           state.fixedPaints = parsed.fixedPaints.map(p => normalizePaintObject(p, true));
         }
@@ -1180,6 +1210,7 @@
           }
           state.dailyPaintsByDate = normDaily;
         }
+        syncAllPaintsToArchive();
         if (parsed.dayGrids) state.dayGrids = parsed.dayGrids;
         if (parsed.dayGridBorders) state.dayGridBorders = parsed.dayGridBorders;
         if (parsed.dayGridNotes) state.dayGridNotes = parsed.dayGridNotes;
@@ -1192,6 +1223,7 @@
         state.updatedAt = parsed.updatedAt || 0;
         return true;
       } catch (e) {
+        syncAllPaintsToArchive();
         return false;
       }
     }
@@ -1201,15 +1233,21 @@
       return [...state.fixedPaints, ...daily];
     }
 
+    // 팔레트에서 삭제되었거나 수정으로 분리된 과거 물감이라도 paintArchive에서 찾아 반환하여 칠해진 기록을 영구 유지
     function getPaintById(paintId, dateStr = state.selectedDate) {
       if (!paintId) return null;
       const list = getAllPaintsForDate(dateStr);
       const found = list.find(p => p.id === paintId);
       if (found) return found;
       for (const d in state.dailyPaintsByDate) {
-        const m = state.dailyPaintsByDate[d].find(p => p.id === paintId);
+        const m = (state.dailyPaintsByDate[d] || []).find(p => p.id === paintId);
         if (m) return m;
       }
+      if (state.paintArchive && state.paintArchive[paintId]) {
+        return state.paintArchive[paintId];
+      }
+      const def = DEFAULT_FAVORITE_PAINTS.find(p => p.id === paintId);
+      if (def) return def;
       return null;
     }
 
@@ -1512,7 +1550,7 @@
 
     function updatePaletteCenterAndDockUI() {
       const allPaints = getAllPaintsForDate(state.selectedDate);
-      const activePaint = getPaintById(state.activePaintId) || allPaints[0] || state.fixedPaints[0];
+      const activePaint = allPaints.find(p => p.id === state.activePaintId) || allPaints[0] || state.fixedPaints[0];
       if (!activePaint) return;
       state.activePaintId = activePaint.id;
 
@@ -1843,6 +1881,7 @@
     }
 
     // 새 물감 추가 또는 기존 물감 수정 저장 통합 함수
+    // (팔레트에서 물감을 조작하는 것과 이미 칠해진 기록은 완전히 별개로 동작)
     function savePaintFromMixer() {
       const nameInput = document.getElementById('new-paint-name');
       const colorInput = document.getElementById('new-paint-color');
@@ -1865,58 +1904,74 @@
           return;
         }
 
-        // 기존에 칠해진 그리드 칸들의 테두리가 바뀌지 않도록 먼저 고정 보장
+        // 기존에 칠해진 그리드 칸들의 테두리와 물감 스냅샷이 바뀌지 않도록 먼저 고정 보장
         ensureDayGridBordersInitialized();
+        archivePaintSnapshot(paint);
 
-        const oldColor = paint.color;
-        paint.name = name;
-        paint.color = newColor;
-        paint.borderType = state.newPaintBorderType;
+        const isVisualOrNameChanged =
+          paint.name !== name ||
+          paint.color !== newColor ||
+          paint.borderType !== state.newPaintBorderType;
 
-        // 상시 루틴(★) <-> 당일 물감(☆) 위치 변경 처리
+        // 이미 그리드나 원형 도화지에 칠해진 기록이 있는 물감을 수정할 경우:
+        // 기존 ID는 paintArchive에 수정 전 상태 그대로 남겨 이미 칠해진 기록들이 영향받지 않게 하고,
+        // 팔레트 위의 물감만 새 ID를 부여해 분리!
+        const shouldForkId = isVisualOrNameChanged && isPaintUsedInRecords(targetId);
+        const nextPaintId = shouldForkId
+          ? ('paint_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6))
+          : targetId;
+
+        const updatedPaint = {
+          ...paint,
+          id: nextPaintId,
+          name,
+          color: newColor,
+          borderType: state.newPaintBorderType,
+          isFavorite: state.newPaintIsFavorite,
+          isFixed: state.newPaintIsFavorite
+        };
+        archivePaintSnapshot(updatedPaint);
+
+        // 상시 루틴(★) <-> 당일 물감(☆) 위치 변경 및 팔레트 내 교체 처리
         const inFixedIdx = state.fixedPaints.findIndex(p => p.id === targetId);
-        if (state.newPaintIsFavorite && inFixedIdx === -1) {
-          for (const d in state.dailyPaintsByDate) {
-            const idx = (state.dailyPaintsByDate[d] || []).findIndex(p => p.id === targetId);
-            if (idx !== -1) state.dailyPaintsByDate[d].splice(idx, 1);
+        if (state.newPaintIsFavorite) {
+          if (inFixedIdx !== -1) {
+            state.fixedPaints[inFixedIdx] = updatedPaint;
+          } else {
+            for (const d in state.dailyPaintsByDate) {
+              const idx = (state.dailyPaintsByDate[d] || []).findIndex(p => p.id === targetId);
+              if (idx !== -1) state.dailyPaintsByDate[d].splice(idx, 1);
+            }
+            state.fixedPaints.push(updatedPaint);
           }
-          paint.isFavorite = true;
-          paint.isFixed = true;
-          state.fixedPaints.push(paint);
-        } else if (!state.newPaintIsFavorite && inFixedIdx !== -1) {
-          state.fixedPaints.splice(inFixedIdx, 1);
-          paint.isFavorite = false;
-          paint.isFixed = false;
-          if (!state.dailyPaintsByDate[state.selectedDate]) {
-            state.dailyPaintsByDate[state.selectedDate] = [];
-          }
-          state.dailyPaintsByDate[state.selectedDate].push(paint);
         } else {
-          paint.isFavorite = state.newPaintIsFavorite;
-          paint.isFixed = state.newPaintIsFavorite;
+          if (inFixedIdx !== -1) {
+            state.fixedPaints.splice(inFixedIdx, 1);
+            if (!state.dailyPaintsByDate[state.selectedDate]) {
+              state.dailyPaintsByDate[state.selectedDate] = [];
+            }
+            state.dailyPaintsByDate[state.selectedDate].push(updatedPaint);
+          } else {
+            let replacedInDaily = false;
+            for (const d in state.dailyPaintsByDate) {
+              const idx = (state.dailyPaintsByDate[d] || []).findIndex(p => p.id === targetId);
+              if (idx !== -1) {
+                state.dailyPaintsByDate[d][idx] = updatedPaint;
+                replacedInDaily = true;
+              }
+            }
+            if (!replacedInDaily) {
+              if (!state.dailyPaintsByDate[state.selectedDate]) {
+                state.dailyPaintsByDate[state.selectedDate] = [];
+              }
+              state.dailyPaintsByDate[state.selectedDate].push(updatedPaint);
+            }
+          }
         }
 
-        // 물감 색상이 변경된 경우: 원형 도화지 및 그리드 브러시 궤적의 색상도 함께 업데이트
-        if (oldColor !== newColor) {
-          for (const d in state.circleStrokesByDate) {
-            (state.circleStrokesByDate[d] || []).forEach(s => {
-              if (s.paintId === targetId || (!s.paintId && s.color === oldColor)) {
-                s.color = newColor;
-              }
-            });
-          }
-          for (const d in state.dayGridStrokesByDate) {
-            (state.dayGridStrokesByDate[d] || []).forEach(s => {
-              if (s.color === oldColor) {
-                s.color = newColor;
-              }
-            });
-          }
-        }
-
-        state.activePaintId = targetId;
+        state.activePaintId = updatedPaint.id;
         state.brushBorderCycleStep = 0;
-        state.activeBrushBorderType = paint.borderType;
+        state.activeBrushBorderType = updatedPaint.borderType;
         state.isEraserMode = false;
         closeNewPaintMixer();
         saveState();
@@ -1929,7 +1984,7 @@
           buildLifeNetworkGeometry();
           drawLifeNetworkFrame();
         }
-        showToast(`✎ [${name}] 물감 정보가 수정되었습니다.`, 'emerald');
+        showToast(`✎ 팔레트의 [${name}] 물감 정보가 수정되었습니다 (이미 칠해진 기록은 그대로 유지됩니다).`, 'emerald');
         return;
       }
 
@@ -1942,6 +1997,7 @@
         isFavorite: state.newPaintIsFavorite,
         isFixed: state.newPaintIsFavorite
       };
+      archivePaintSnapshot(newPaint);
 
       if (newPaint.isFavorite) {
         state.fixedPaints.push(newPaint);
@@ -1968,7 +2024,8 @@
       savePaintFromMixer();
     }
 
-    // 상시 루틴 물감 & 당일 물감 통합 삭제 함수
+    // 팔레트에서 물감 삭제 함수
+    // (팔레트에서만 해당 물감을 제거하며, 이미 칠해진 그리드 칸·원형 도화지·세부사항 메모 등 모든 기록은 별개로 보존!)
     function deletePaintById(paintId) {
       const allAvailable = getAllPaintsForDate(state.selectedDate);
       if (allAvailable.length <= 1) {
@@ -1979,37 +2036,21 @@
       const targetPaint = getPaintById(paintId, state.selectedDate);
       const targetName = targetPaint ? targetPaint.name : '물감';
 
-      // 1) 상시 루틴 목록에서 제거
+      // 삭제 전 영구 물감 보존소(paintArchive)에 스냅샷을 저장하여 이미 칠해진 기록들이 영구히 참조할 수 있도록 보장
+      if (targetPaint) {
+        archivePaintSnapshot(targetPaint);
+      }
+      ensureDayGridBordersInitialized();
+
+      // 1) 상시 루틴 팔레트 목록에서 제거
       state.fixedPaints = state.fixedPaints.filter(p => p.id !== paintId);
 
-      // 2) 날짜별 당일 물감 목록에서 제거
+      // 2) 날짜별 당일 팔레트 목록에서 제거
       for (const d in state.dailyPaintsByDate) {
         state.dailyPaintsByDate[d] = (state.dailyPaintsByDate[d] || []).filter(p => p.id !== paintId);
       }
 
-      // 3) 그리드에 해당 물감으로 칠해져 있던 슬롯, 테두리 및 메모 정리
-      for (const d in state.dayGrids) {
-        const grid = state.dayGrids[d];
-        if (!Array.isArray(grid)) continue;
-        for (let i = 0; i < grid.length; i++) {
-          if (grid[i] === paintId) {
-            grid[i] = null;
-            if (state.dayGridBorders && state.dayGridBorders[d]) {
-              state.dayGridBorders[d][i] = null;
-            }
-            if (state.dayGridNotes && state.dayGridNotes[d]) {
-              delete state.dayGridNotes[d][i];
-            }
-          }
-        }
-      }
-
-      // 4) 원형 도화지에서 해당 물감 스트로크 정리
-      for (const d in state.circleStrokesByDate) {
-        state.circleStrokesByDate[d] = (state.circleStrokesByDate[d] || []).filter(s => s.paintId !== paintId);
-      }
-
-      // 5) 만약 현재 수정 중이거나 선택된 물감이었다면 초기화 및 다음 물감 선택
+      // 3) 만약 현재 수정 중이거나 선택된 물감이었다면 초기화 및 팔레트에 남은 다른 물감 선택
       if (state.editingPaintId === paintId) {
         closeNewPaintMixer();
       }
@@ -2030,7 +2071,7 @@
         buildLifeNetworkGeometry();
         drawLifeNetworkFrame();
       }
-      showToast(`🗑️ [${targetName}] 물감을 삭제했습니다.`, 'stone');
+      showToast(`🗑️ 팔레트에서 [${targetName}] 물감을 제거했습니다 (이미 칠해진 기록은 그대로 유지됩니다).`, 'stone');
     }
 
     function deleteDailyPaint(paintId) {
@@ -2227,6 +2268,9 @@
       drawSoftBrushStrokeOnCtx(ctx, x1, y1, x2, y2, radius, color, isEraser);
 
       if (recordStroke) {
+        if (!isEraser && activePaint) {
+          archivePaintSnapshot(activePaint);
+        }
         if (!state.circleStrokesByDate[state.selectedDate]) {
           state.circleStrokesByDate[state.selectedDate] = [];
         }
@@ -2238,6 +2282,8 @@
           r: radius,
           color,
           paintId: activePaint ? activePaint.id : null,
+          paintName: activePaint ? activePaint.name : null,
+          borderType: getEffectiveBrushBorderType(),
           isEraser
         });
       }
@@ -2367,7 +2413,31 @@
       const maxR = W / 2 - 6;
 
       const imgData = ctx.getImageData(0, 0, W, H).data;
-      const paints = getAllPaintsForDate(state.selectedDate);
+      const paintMap = new Map();
+      getAllPaintsForDate(state.selectedDate).forEach(p => {
+        if (p && p.id) paintMap.set(p.id, p);
+      });
+      (state.circleStrokesByDate[state.selectedDate] || []).forEach(s => {
+        if (s.isEraser) return;
+        if (s.paintId) {
+          const p = getPaintById(s.paintId, state.selectedDate);
+          if (p) paintMap.set(p.id, p);
+          else if (s.paintName || s.color) {
+            paintMap.set(s.paintId, {
+              id: s.paintId,
+              name: s.paintName || '기록된 물감',
+              color: s.color || '#f59e0b',
+              borderType: s.borderType || 'gold'
+            });
+          }
+        }
+      });
+      (state.dayGrids[state.selectedDate] || []).forEach(pid => {
+        if (!pid) return;
+        const p = getPaintById(pid, state.selectedDate);
+        if (p) paintMap.set(p.id, p);
+      });
+      const paints = Array.from(paintMap.values());
       const paintRgbList = paints.map(p => ({
         paint: p,
         rgb: hexToRgbObj(p.color),
@@ -2931,10 +3001,14 @@
       const grid = state.dayGrids[state.selectedDate];
       const borders = state.dayGridBorders[state.selectedDate];
       const radius = Number(state.gridBrushRadius);
-      const activePaint = getPaintById(state.activePaintId) || state.fixedPaints[0];
+      const allPaints = getAllPaintsForDate(state.selectedDate);
+      const activePaint = allPaints.find(p => p.id === state.activePaintId) || getPaintById(state.activePaintId) || state.fixedPaints[0];
       const color = activePaint ? activePaint.color : '#f59e0b';
       const isEraser = state.isEraserMode;
       const effectiveBorder = getEffectiveBrushBorderType();
+      if (!isEraser && activePaint) {
+        archivePaintSnapshot(activePaint);
+      }
 
       const off = ensureGridTrailOffscreenCanvas();
       if (off) {
@@ -4790,150 +4864,6 @@
       if (state.currentView === 'life') buildLifeNetworkGeometry();
 
       showToast('일·월·연·전체 단위에 황금/검은 테두리 기억 데이터가 채워졌습니다!', 'emerald');
-    }
-
-    /***************************************************************************
-     * 13. Python 웹 서버 코드 (Flask + SQLite) 모달
-     ***************************************************************************/
-    function getPythonServerSourceCode() {
-      return `#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-시간의 도화지 (Artist's Desk & Time Canvas) — Python Flask + SQLite 웹 애플리케이션 서버
-개선 사항 반영:
-  - 모든 색상(color HEX) 자유 선택 허용
-  - 루틴 별표 즐겨찾기 (is_favorite: 1=★상시 루틴, 0=☆당일 전용 물감)
-  - 긍정적인 일 = 황금색 테두리 (border_type = 'gold')
-  - 부정적인 일 = 검은색 테두리 (border_type = 'black')
-  - (*) 하루 황금색 기억 평가: 황금 테두리 칸 비율이 높을수록 황금색(1.0), 검은 테두리 칸이 많을수록 검정색(0.0)
-"""
-
-import json
-import sqlite3
-from pathlib import Path
-from datetime import datetime
-from flask import Flask, request, jsonify, send_file
-
-app = Flask(__name__)
-DB_PATH = Path(__file__).parent / "time_canvas.db"
-
-
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-
-def init_db():
-    with get_db() as conn:
-        conn.executescript(
-            """
-            CREATE TABLE IF NOT EXISTS paints (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                color TEXT NOT NULL,
-                border_type TEXT NOT NULL CHECK(border_type IN ('gold', 'black', 'none')),
-                is_favorite INTEGER NOT NULL DEFAULT 1,
-                target_date TEXT
-            );
-
-            CREATE TABLE IF NOT EXISTS day_records (
-                record_date TEXT PRIMARY KEY,
-                slots_json TEXT NOT NULL,
-                circle_strokes_json TEXT NOT NULL,
-                gold_border_count INTEGER NOT NULL DEFAULT 0,
-                black_border_count INTEGER NOT NULL DEFAULT 0,
-                gold_ratio REAL,
-                updated_at TEXT NOT NULL
-            );
-            """
-        )
-
-
-def calculate_gold_ratio_by_border(slots, paint_map):
-    """
-    (*) 색상에 관계없이 황금색 테두리(border_type == 'gold') 칸이 많을수록,
-    검은색 테두리(border_type == 'black') 칸이 적을수록 1.0(진한 황금색)에 수렴합니다.
-    """
-    gold_cnt = 0
-    black_cnt = 0
-    for pid in slots:
-        if not pid or pid not in paint_map:
-            continue
-        if paint_map[pid]["border_type"] == "black":
-            black_cnt += 1
-        elif paint_map[pid]["border_type"] == "gold":
-            gold_cnt += 1
-
-    total = gold_cnt + black_cnt
-    if total == 0:
-        return 0, 0, None
-
-    weighted = (gold_cnt - black_cnt * 1.35) / total
-    gold_ratio = max(0.0, min(1.0, (weighted + 1.0) / 2.0))
-    return gold_cnt, black_cnt, round(gold_ratio, 4)
-
-
-@app.route("/")
-def index():
-    html_file = Path(__file__).parent / "index.html"
-    if html_file.exists():
-        return send_file(html_file)
-    return "index.html 파일을 같은 폴더에 위치시켜 주세요.", 200
-
-
-@app.route("/api/paints/< paint_id >/toggle_favorite", methods=["POST"])
-def toggle_favorite(paint_id):
-    """★ 루틴 즐겨찾기 별표 토글 API"""
-    payload = request.get_json(force=True)
-    is_fav = 1 if payload.get("isFavorite") else 0
-    target_date = None if is_fav else payload.get("date")
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE paints SET is_favorite = ?, target_date = ? WHERE id = ?",
-            (is_fav, target_date, paint_id),
-        )
-    return jsonify({"status": "ok", "paintId": paint_id, "isFavorite": bool(is_fav)})
-
-
-if __name__ == "__main__":
-    init_db()
-    print("🎨 시간의 도화지 (Artist's Desk) 서버 시작: http://127.0.0.1:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
-`;
-    }
-
-    function openPythonModal() {
-      const modal = document.getElementById('python-modal');
-      document.getElementById('python-code-block').textContent = getPythonServerSourceCode();
-      modal.classList.remove('hidden');
-    }
-
-    function closePythonModal() {
-      document.getElementById('python-modal').classList.add('hidden');
-    }
-
-    function copyPythonCode() {
-      const textarea = document.createElement('textarea');
-      textarea.value = getPythonServerSourceCode();
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
-      showToast('Python 서버 코드가 클립보드에 복사되었습니다!', 'emerald');
-    }
-
-    function downloadPythonCode() {
-      const blob = new Blob([getPythonServerSourceCode()], { type: 'text/x-python;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'app.py';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast('app.py 파일 다운로드가 시작되었습니다.', 'emerald');
     }
 
     /***************************************************************************
