@@ -282,6 +282,18 @@
           <span>☁️</span>
           <span id="sync-status-text" class="hidden xl:inline text-[11px]">동기화</span>
         </button>
+
+        <!-- [3·4단계] 현재 로그인 계정 배지 & 계정 관리 / 로그아웃 버튼 -->
+        <div id="header-account-box" class="hidden items-center gap-1 bg-stone-900 text-amber-300 pl-2.5 pr-1.5 py-1 rounded-full border border-stone-700 shadow-2xs text-xs">
+          <span class="text-[11px]">👤</span>
+          <span id="header-current-user-id" class="font-mono font-bold text-[11px] max-w-[90px] truncate">아이디</span>
+          <button onclick="openAccountManageModal()" class="ml-1 px-2 py-0.5 rounded-full bg-stone-800 hover:bg-amber-400 text-stone-200 hover:text-stone-950 text-[10px] font-bold transition cursor-pointer" title="비밀번호 변경 및 계정 관리">
+            ⚙️ 관리
+          </button>
+          <button onclick="handleUserLogout()" class="px-2 py-0.5 rounded-full bg-stone-800 hover:bg-rose-600 text-stone-200 hover:text-white text-[10px] font-bold transition cursor-pointer" title="현재 계정에서 로그아웃">
+            로그아웃
+          </button>
+        </div>
       </div>
 
     </div>
@@ -776,6 +788,138 @@
   <!-- 토스트 알림창 -->
   <div id="toast-container" class="fixed bottom-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- 토스트 알림창 -->
+  <div id="toast-container" class="fixed bottom-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- =========================================================================
+       [3단계 추가] 비로그인 시 먼저 표시되는 아틀리에 로그인 · 회원가입 화면
+       ========================================================================= -->
+  <div id="auth-gate-modal" class="fixed inset-0 z-50 bg-[#f0ebe1]/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="paper-sheet rounded-3xl max-w-md w-full p-6 sm:p-8 border border-stone-300 shadow-2xl space-y-6">
+      
+      <!-- 상단 타이틀 -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-full bg-stone-900 text-amber-300 flex items-center justify-center shadow-md border border-amber-400/50 text-xl">
+          🎨
+        </div>
+        <span class="text-[10px] font-bold uppercase tracking-widest text-stone-400 block">Artist's Desk & Time Canvas</span>
+        <h2 class="serif-title text-2xl font-bold text-stone-900">시간의 도화지 입장</h2>
+        <p id="auth-gate-subtitle" class="text-xs text-stone-500">계정으로 로그인하여 나만의 시간 도화지를 펼쳐보세요.</p>
+      </div>
+
+      <!-- 로그인 / 회원가입 모드 전환 탭 -->
+      <div class="grid grid-cols-2 bg-stone-200/80 p-1 rounded-full border border-stone-300/80 text-xs">
+        <button type="button" onclick="switchAuthUiMode('login')" id="tab-auth-login" class="py-2 rounded-full font-bold bg-stone-900 text-amber-300 shadow-xs transition cursor-pointer">
+          🔑 로그인
+        </button>
+        <button type="button" onclick="switchAuthUiMode('register')" id="tab-auth-register" class="py-2 rounded-full font-semibold text-stone-600 hover:text-stone-900 transition cursor-pointer">
+          ✨ 새 계정 만들기
+        </button>
+      </div>
+
+      <!-- 기기에 등록된 계정 빠른 선택 칩 (등록된 계정이 있을 때만 표시) -->
+      <div id="saved-accounts-quick-box" class="hidden space-y-1.5 bg-stone-100/90 p-3 rounded-2xl border border-stone-200/90">
+        <div class="text-[10px] font-bold text-stone-500">📌 이 기기에 생성된 계정 (클릭 시 아이디 자동 입력)</div>
+        <div id="saved-accounts-chip-list" class="flex flex-wrap gap-1.5"></div>
+      </div>
+
+      <!-- 아이디 / 비밀번호 입력 폼 -->
+      <form onsubmit="handleAuthFormSubmit(event)" class="space-y-3.5 text-xs">
+        <div class="space-y-1">
+          <label for="auth-user-id-input" class="font-bold text-stone-700 block">아이디 (ID)</label>
+          <input id="auth-user-id-input" type="text" autocomplete="username" placeholder="2~20자 아이디 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+
+        <div class="space-y-1">
+          <label for="auth-password-input" class="font-bold text-stone-700 block">비밀번호 (Password)</label>
+          <input id="auth-password-input" type="password" autocomplete="current-password" placeholder="비밀번호 입력 (4자 이상)" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+
+        <!-- 회원가입 모드 전용: 비밀번호 확인 -->
+        <div id="auth-password-confirm-wrap" class="hidden space-y-1">
+          <label for="auth-password-confirm-input" class="font-bold text-stone-700 block">비밀번호 확인</label>
+          <input id="auth-password-confirm-input" type="password" autocomplete="new-password" placeholder="비밀번호를 한 번 더 입력" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-stone-300 text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+
+        <!-- 오류 메시지 표시줄 -->
+        <div id="auth-error-msg" class="hidden text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 text-center"></div>
+
+        <!-- 제출 버튼 -->
+        <button type="submit" id="auth-submit-btn" class="w-full py-3 rounded-full bg-stone-900 hover:bg-stone-800 text-amber-300 font-extrabold text-sm shadow-md transition cursor-pointer">
+          도화지 입장하기
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       [4단계 추가] 계정 관리 모달 (비밀번호 변경 · 기존 데이터 가져오기 · 계정 삭제)
+       ========================================================================= -->
+  <div id="account-manage-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-[#fcfaf5] text-stone-900 border border-stone-300 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      
+      <!-- 모달 헤더 -->
+      <div class="px-5 py-4 bg-stone-900 text-stone-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">👤</span>
+          <div>
+            <h3 class="serif-title font-bold text-sm sm:text-base text-amber-300">내 계정 관리</h3>
+            <p class="text-[11px] text-stone-300">계정별 도화지 데이터 보호 및 보안 설정</p>
+          </div>
+        </div>
+        <button onclick="closeAccountManageModal()" class="p-1.5 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs cursor-pointer">✕</button>
+      </div>
+
+      <!-- 모달 본문 -->
+      <div class="p-5 overflow-y-auto space-y-5 text-xs leading-relaxed flex-1">
+        
+        <!-- 1) 현재 계정 상태 요약 -->
+        <div class="bg-white rounded-2xl p-3.5 border border-stone-200 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="text-stone-500 font-semibold">현재 로그인 아이디</span>
+            <span id="manage-modal-user-id" class="font-mono font-extrabold text-sm text-stone-900">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-stone-500 font-semibold">계정 생성일</span>
+            <span id="manage-modal-created-at" class="font-mono text-stone-600">-</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-stone-500 font-semibold">기록된 도화지 일수</span>
+            <span id="manage-modal-recorded-days" class="font-mono font-bold text-amber-700">0일</span>
+          </div>
+        </div>
+
+        <!-- 2) 비밀번호 변경 폼 -->
+        <form onsubmit="handleChangePasswordSubmit(event)" class="bg-white rounded-2xl p-4 border border-stone-300 space-y-3">
+          <h4 class="font-extrabold text-xs text-stone-900">🔐 비밀번호 변경</h4>
+          <input id="manage-current-pw" type="password" placeholder="현재 비밀번호 입력" class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          <input id="manage-new-pw" type="password" placeholder="새 비밀번호 입력 (4자 이상)" class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          <input id="manage-new-pw-confirm" type="password" placeholder="새 비밀번호 확인" class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-stone-50 text-xs focus:outline-none focus:ring-2 focus:ring-amber-500" />
+          <div class="flex justify-end">
+            <button type="submit" class="px-4 py-1.5 rounded-full bg-stone-900 hover:bg-stone-800 text-amber-300 font-bold text-xs shadow-xs transition cursor-pointer">
+              비밀번호 변경하기
+            </button>
+          </div>
+        </form>
+
+        <!-- 3) 계정 영구 삭제 (탈퇴) 폼 -->
+        <form onsubmit="handleDeleteAccountSubmit(event)" class="bg-rose-50/70 rounded-2xl p-4 border border-rose-200 space-y-2.5">
+          <h4 class="font-extrabold text-xs text-rose-800">⚠️ 계정 및 도화지 데이터 삭제</h4>
+          <p class="text-[11px] text-rose-700">
+            계정을 삭제하면 이 계정에 저장된 모든 시간 그리드, 원형 도화지, 물감 기록이 기기에서 영구 삭제됩니다.
+          </p>
+          <div class="flex gap-2">
+            <input id="manage-delete-pw" type="password" placeholder="확인용 현재 비밀번호" class="flex-1 px-3 py-1.5 rounded-xl border border-rose-300 bg-white text-xs focus:outline-none focus:ring-2 focus:ring-rose-500" />
+            <button type="submit" class="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shrink-0 transition cursor-pointer">
+              계정 삭제
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
   <!-- =========================================================================
        PC·모바일 클라우드 동기화 모달
        ========================================================================= -->
@@ -863,6 +1007,608 @@
     const GH_SYNC_CONFIG_KEY = 'TIME_CANVAS_GH_SYNC_CFG';
     const CLOUD_ROOM_KEY_STORAGE = 'TIME_CANVAS_ROOM_KEY';
     const CUSTOM_FB_CONFIG_STORAGE = 'TIME_CANVAS_CUSTOM_FB_CFG';
+
+    /***************************************************************************
+     * [1단계 추가] 다중 계정(ID/Password) 데이터 구조 및 저장소 초기화
+     ***************************************************************************/
+    const ACCOUNTS_STORAGE_KEY = 'TIME_CANVAS_ACCOUNTS_V1'; // 전체 계정 목록 저장소 키
+    const CURRENT_SESSION_KEY = 'TIME_CANVAS_SESSION_V1';   // 현재 로그인 세션 저장소 키
+
+    /**
+     * 런타임 계정 관리 상태 객체
+     * - accounts: {
+     *     [userId]: {
+     *       userId: string,        // 사용자 아이디 (고유 키)
+     *       passwordHash: string,  // 인코딩된 비밀번호 해시
+     *       createdAt: number,     // 계정 생성 시각 (timestamp)
+     *       lastLoginAt: number    // 마지막 로그인 시각 (timestamp)
+     *     }
+     *   }
+     * - currentUserId: 현재 로그인한 사용자 ID (비로그인 시 null)
+     */
+    let accountStore = {
+      accounts: {},
+      currentUserId: null
+    };
+
+    // 비밀번호 간단 해시 변환 유틸리티 (평문 노출 방지용)
+    function encodePasswordHash(rawPassword) {
+      const salted = `TC_SALT_V1::${String(rawPassword || '')}`;
+      return utf8ToBase64(salted);
+    }
+
+    // 현재 활성화된 계정에 맞는 도화지 데이터 저장소 키 반환 (비로그인 시 기존 키 유지)
+    function getActiveCanvasStorageKey() {
+      if (accountStore.currentUserId) {
+        return `${STORAGE_KEY}_USER_${accountStore.currentUserId}`;
+      }
+      return STORAGE_KEY;
+    }
+
+    // 계정 목록을 localStorage에 저장
+    function saveAccountStore() {
+      try {
+        localStorage.setItem(
+          ACCOUNTS_STORAGE_KEY,
+          JSON.stringify({
+            accounts: accountStore.accounts,
+            updatedAt: Date.now()
+          })
+        );
+      } catch (e) {
+        console.warn('계정 저장소 저장 오류:', e);
+      }
+    }
+
+    // 현재 로그인 세션을 localStorage에 저장
+    function saveCurrentSession() {
+      try {
+        if (accountStore.currentUserId) {
+          localStorage.setItem(
+            CURRENT_SESSION_KEY,
+            JSON.stringify({
+              currentUserId: accountStore.currentUserId,
+              loginAt: Date.now()
+            })
+          );
+        } else {
+          localStorage.removeItem(CURRENT_SESSION_KEY);
+        }
+      } catch (e) {
+        console.warn('세션 저장 오류:', e);
+      }
+    }
+
+    // 계정 저장소 및 로그인 세션 초기화 (앱 시작 시 1회 호출)
+    function initAccountStore() {
+      try {
+        // 1) 저장된 계정 테이블(객체) 불러오기 또는 빈 구조로 초기화
+        const rawAccounts = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+        if (rawAccounts) {
+          const parsed = JSON.parse(rawAccounts);
+          if (parsed && typeof parsed.accounts === 'object' && parsed.accounts !== null) {
+            accountStore.accounts = parsed.accounts;
+          } else {
+            accountStore.accounts = {};
+          }
+        } else {
+          accountStore.accounts = {};
+          saveAccountStore();
+        }
+
+        // 2) 이전 로그인 세션 복원 및 유효성 확인
+        const rawSession = localStorage.getItem(CURRENT_SESSION_KEY);
+        if (rawSession) {
+          const sessionData = JSON.parse(rawSession);
+          const savedId = sessionData && sessionData.currentUserId;
+          // 실제 존재하는 계정인 경우에만 세션 유지
+          if (savedId && accountStore.accounts[savedId]) {
+            accountStore.currentUserId = savedId;
+          } else {
+            accountStore.currentUserId = null;
+            localStorage.removeItem(CURRENT_SESSION_KEY);
+          }
+        }
+      } catch (e) {
+        console.warn('계정 저장소 초기화 실패:', e);
+        accountStore.accounts = {};
+        accountStore.currentUserId = null;
+      }
+    }
+
+    /***************************************************************************
+     * [2단계 추가] 회원가입 · 로그인 · 로그아웃 핵심 인증 로직
+     ***************************************************************************/
+
+    // 아이디 정규화 유틸리티 (앞뒤 공백 제거)
+    function normalizeUserId(rawUserId) {
+      return String(rawUserId || '').trim();
+    }
+
+    /**
+     * 1. 회원가입 함수: 아이디 중복 확인 후 새 계정 생성
+     * @param {string} rawUserId - 사용할 아이디
+     * @param {string} rawPassword - 사용할 비밀번호
+     * @param {boolean} autoLogin - 가입 직후 자동 로그인 여부 (기본값 true)
+     * @returns {{ ok: boolean, code: string, message: string, userId?: string }}
+     */
+    function registerAccount(rawUserId, rawPassword, autoLogin = true) {
+      const userId = normalizeUserId(rawUserId);
+      const password = String(rawPassword || '');
+
+      // 1) 입력값 유효성 검사
+      if (!userId) {
+        const msg = '아이디를 입력해주세요.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'EMPTY_ID', message: msg };
+      }
+      if (userId.length < 2 || userId.length > 20) {
+        const msg = '아이디는 2자 이상 20자 이하로 입력해주세요.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'INVALID_ID_LENGTH', message: msg };
+      }
+      if (!password || password.length < 4) {
+        const msg = '비밀번호는 최소 4자 이상 입력해주세요.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'INVALID_PASSWORD', message: msg };
+      }
+
+      // 2) 아이디 중복 확인
+      if (accountStore.accounts[userId]) {
+        const msg = `이미 존재하는 아이디입니다: [${userId}]`;
+        showToast(msg, 'amber');
+        return { ok: false, code: 'DUPLICATE_ID', message: msg };
+      }
+
+      // 3) 새 계정 생성 및 저장
+      const now = Date.now();
+      accountStore.accounts[userId] = {
+        userId,
+        passwordHash: encodePasswordHash(password),
+        createdAt: now,
+        lastLoginAt: autoLogin ? now : 0
+      };
+      saveAccountStore();
+
+      // 4) 가입 직후 자동 로그인 처리
+      if (autoLogin) {
+        accountStore.currentUserId = userId;
+        saveCurrentSession();
+      }
+
+      const successMsg = `🎉 [${userId}] 계정이 생성되었습니다!`;
+      showToast(successMsg, 'emerald');
+      return { ok: true, code: 'REGISTERED', message: successMsg, userId };
+    }
+
+    /**
+     * 2. 로그인 함수: 아이디와 비밀번호 일치 여부 검증 및 현재 로그인 계정 상태 저장
+     * @param {string} rawUserId - 입력한 아이디
+     * @param {string} rawPassword - 입력한 비밀번호
+     * @returns {{ ok: boolean, code: string, message: string, userId?: string }}
+     */
+    function loginAccount(rawUserId, rawPassword) {
+      const userId = normalizeUserId(rawUserId);
+      const password = String(rawPassword || '');
+
+      if (!userId || !password) {
+        const msg = '아이디와 비밀번호를 모두 입력해주세요.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'EMPTY_INPUT', message: msg };
+      }
+
+      // 1) 계정 존재 여부 확인
+      const targetAccount = accountStore.accounts[userId];
+      if (!targetAccount) {
+        const msg = '존재하지 않는 아이디입니다.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'NOT_FOUND', message: msg };
+      }
+
+      // 2) 비밀번호 해시 일치 여부 검증
+      const inputHash = encodePasswordHash(password);
+      if (targetAccount.passwordHash !== inputHash) {
+        const msg = '비밀번호가 일치하지 않습니다.';
+        showToast(msg, 'amber');
+        return { ok: false, code: 'WRONG_PASSWORD', message: msg };
+      }
+
+      // 3) 로그인 상태 및 마지막 로그인 시각 저장
+      targetAccount.lastLoginAt = Date.now();
+      accountStore.currentUserId = userId;
+      saveAccountStore();
+      saveCurrentSession();
+
+      const successMsg = `🔓 [${userId}]님, 환영합니다!`;
+      showToast(successMsg, 'emerald');
+      return { ok: true, code: 'LOGGED_IN', message: successMsg, userId };
+    }
+
+    /**
+     * 3. 로그아웃 함수: 현재 로그인 상태 초기화
+     * @returns {{ ok: boolean, code: string, message: string }}
+     */
+    function logoutAccount() {
+      const prevUser = accountStore.currentUserId;
+      accountStore.currentUserId = null;
+      saveCurrentSession();
+
+      const msg = prevUser
+        ? `🔒 [${prevUser}] 계정에서 로그아웃되었습니다.`
+        : '로그아웃되었습니다.';
+      showToast(msg, 'stone');
+      return { ok: true, code: 'LOGGED_OUT', message: msg };
+    }
+
+    /***************************************************************************
+     * [3단계 추가] 로그인 · 회원가입 UI 제어 및 이벤트 핸들러
+     ***************************************************************************/
+    let authUiMode = 'login'; // 'login' | 'register'
+
+    // 로그인 / 회원가입 탭 전환
+    function switchAuthUiMode(mode) {
+      authUiMode = mode === 'register' ? 'register' : 'login';
+
+      const loginTab = document.getElementById('tab-auth-login');
+      const registerTab = document.getElementById('tab-auth-register');
+      const confirmWrap = document.getElementById('auth-password-confirm-wrap');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const subtitle = document.getElementById('auth-gate-subtitle');
+      const errBox = document.getElementById('auth-error-msg');
+      const quickBox = document.getElementById('saved-accounts-quick-box');
+
+      if (errBox) errBox.classList.add('hidden');
+
+      if (authUiMode === 'register') {
+        if (loginTab) loginTab.className = 'py-2 rounded-full font-semibold text-stone-600 hover:text-stone-900 transition cursor-pointer';
+        if (registerTab) registerTab.className = 'py-2 rounded-full font-bold bg-stone-900 text-amber-300 shadow-xs transition cursor-pointer';
+        if (confirmWrap) confirmWrap.classList.remove('hidden');
+        if (submitBtn) submitBtn.textContent = '새 계정 생성 및 시작하기';
+        if (subtitle) subtitle.textContent = '사용할 아이디와 비밀번호를 입력해 새 도화지 계정을 만드세요.';
+        if (quickBox) quickBox.classList.add('hidden');
+      } else {
+        if (loginTab) loginTab.className = 'py-2 rounded-full font-bold bg-stone-900 text-amber-300 shadow-xs transition cursor-pointer';
+        if (registerTab) registerTab.className = 'py-2 rounded-full font-semibold text-stone-600 hover:text-stone-900 transition cursor-pointer';
+        if (confirmWrap) confirmWrap.classList.add('hidden');
+        if (submitBtn) submitBtn.textContent = '도화지 입장하기';
+        if (subtitle) subtitle.textContent = '계정으로 로그인하여 나만의 시간 도화지를 펼쳐보세요.';
+        renderSavedAccountChips();
+      }
+    }
+
+    // 기기에 생성된 계정 목록을 빠른 선택 칩으로 렌더링
+    function renderSavedAccountChips() {
+      const quickBox = document.getElementById('saved-accounts-quick-box');
+      const chipList = document.getElementById('saved-accounts-chip-list');
+      if (!quickBox || !chipList) return;
+
+      const userIds = Object.keys(accountStore.accounts || {});
+      if (userIds.length === 0 || authUiMode === 'register') {
+        quickBox.classList.add('hidden');
+        chipList.innerHTML = '';
+        return;
+      }
+
+      quickBox.classList.remove('hidden');
+      chipList.innerHTML = userIds.map(uid => `
+        <button type="button" onclick="selectSavedAccountChip('${escapeHtmlAttr(uid)}')"
+                class="px-2.5 py-1 rounded-full bg-white hover:bg-amber-100 text-stone-800 border border-stone-300 text-[11px] font-mono font-bold transition cursor-pointer">
+          👤 ${escapeHtmlAttr(uid)}
+        </button>
+      `).join('');
+    }
+
+    // 계정 칩 클릭 시 아이디 입력칸 자동 채우기
+    function selectSavedAccountChip(userId) {
+      const idInput = document.getElementById('auth-user-id-input');
+      const pwInput = document.getElementById('auth-password-input');
+      if (idInput) idInput.value = userId;
+      if (pwInput) {
+        pwInput.value = '';
+        pwInput.focus();
+      }
+    }
+
+    // 로그인 오류 메시지 표시 헬퍼
+    function showAuthModalError(msg) {
+      const errBox = document.getElementById('auth-error-msg');
+      if (!errBox) return;
+      errBox.textContent = msg;
+      errBox.classList.remove('hidden');
+    }
+
+    // 현재 로그인 상태에 따라 로그인 화면(모달) 및 상단 헤더 상태 동기화
+    function syncAuthScreenState() {
+      const modal = document.getElementById('auth-gate-modal');
+      const headerBox = document.getElementById('header-account-box');
+      const headerUserId = document.getElementById('header-current-user-id');
+
+      if (accountStore.currentUserId) {
+        // 로그인된 상태: 로그인 모달 숨김 & 상단 바에 현재 아이디 표시
+        if (modal) modal.classList.add('hidden');
+        if (headerBox) {
+          headerBox.classList.remove('hidden');
+          headerBox.classList.add('flex');
+        }
+        if (headerUserId) headerUserId.textContent = accountStore.currentUserId;
+      } else {
+        // 비로그인 상태: 로그인 모달을 최우선으로 표시 & 등록된 계정이 하나도 없으면 회원가입 탭으로 안내
+        if (modal) modal.classList.remove('hidden');
+        if (headerBox) {
+          headerBox.classList.add('hidden');
+          headerBox.classList.remove('flex');
+        }
+        const hasAnyAccount = Object.keys(accountStore.accounts || {}).length > 0;
+        switchAuthUiMode(hasAnyAccount ? 'login' : 'register');
+
+        const pwInput = document.getElementById('auth-password-input');
+        const pwConfirmInput = document.getElementById('auth-password-confirm-input');
+        if (pwInput) pwInput.value = '';
+        if (pwConfirmInput) pwConfirmInput.value = '';
+
+        setTimeout(() => {
+          const idInput = document.getElementById('auth-user-id-input');
+          if (idInput) idInput.focus();
+        }, 50);
+      }
+    }
+
+    /***************************************************************************
+     * [4단계 추가] 계정별 도화지 상태 격리 로드 & 비밀번호 변경 · 계정 삭제 관리
+     ***************************************************************************/
+
+    // 계정 전환 또는 로그아웃 시 런타임 도화지 메모리를 깨끗한 초기 상태로 리셋
+    function resetCanvasStateForAccountSwitch() {
+      state.fixedPaints = DEFAULT_FAVORITE_PAINTS.map(p => ({ ...p }));
+      state.dailyPaintsByDate = {};
+      state.paintArchive = {};
+      state.activePaintId = 'fix_focus';
+      state.brushBorderCycleStep = 0;
+      state.activeBrushBorderType = 'gold';
+      state.isEraserMode = false;
+
+      state.birthDate = '1998-05-15';
+      state.lifeExpectancy = 85;
+      state.dayGrids = {};
+      state.dayGridBorders = {};
+      state.dayGridNotes = {};
+      state.dayGridStrokesByDate = {};
+      state.circleStrokesByDate = {};
+      state.simulatedQuarterMemory = {};
+      state.updatedAt = 0;
+
+      // 날짜별 실행 취소(Undo/Redo) 히스토리 및 캐시 초기화
+      for (const k in undoStackByDate) delete undoStackByDate[k];
+      for (const k in redoStackByDate) delete redoStackByDate[k];
+      paintLookupMap.clear();
+      dayMemoryCache.clear();
+      invalidateDailyGridStaticCache();
+      invalidateLifeStaticCache();
+    }
+
+    // 현재 로그인된 계정의 데이터를 불러와 전체 도화지 화면에 반영
+    function loadCurrentAccountCanvasData() {
+      resetCanvasStateForAccountSwitch();
+
+      if (accountStore.currentUserId) {
+        const activeKey = getActiveCanvasStorageKey();
+        // 만약 새로 만든 계정에 아직 데이터가 없고, 기존 단일(비로그인) 데이터가 있다면 첫 가입 시 자동 마이그레이션 지원
+        if (!localStorage.getItem(activeKey) && Object.keys(accountStore.accounts).length === 1) {
+          const legacyRaw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('TIME_CANVAS_ATELIER_V1');
+          if (legacyRaw) {
+            localStorage.setItem(activeKey, legacyRaw);
+          }
+        }
+        loadState();
+      } else {
+        syncAllPaintsToArchive();
+      }
+
+      // 상단 생년월일·기대수명 입력창 및 붓 상태 동기화
+      const bInput = document.getElementById('birth-date-input');
+      const eInput = document.getElementById('life-expectancy-input');
+      if (bInput) bInput.value = state.birthDate;
+      if (eInput) eInput.value = state.lifeExpectancy;
+
+      const initPaint = getPaintById(state.activePaintId, state.selectedDate) || state.fixedPaints[0];
+      if (initPaint) {
+        state.activePaintId = initPaint.id;
+        state.brushBorderCycleStep = 0;
+        state.activeBrushBorderType = initPaint.borderType || 'gold';
+      }
+
+      // 전체 뷰 및 캔버스 재렌더링
+      renderCircularPalette();
+      renderDailyGrid();
+      replayCircularStrokes();
+      updateUndoRedoButtonsUI();
+      if (state.currentView === 'month') renderMonthView();
+      if (state.currentView === 'year') renderYearView();
+      if (state.currentView === 'life') {
+        buildLifeNetworkGeometry();
+        drawLifeNetworkFrame();
+      }
+    }
+
+    // [3단계 함수 업데이트] 로그인/회원가입 성공 시 해당 계정의 도화지 데이터를 즉시 불러오도록 연결
+    function handleAuthFormSubmit(event) {
+      if (event) event.preventDefault();
+
+      const idInput = document.getElementById('auth-user-id-input');
+      const pwInput = document.getElementById('auth-password-input');
+      const pwConfirmInput = document.getElementById('auth-password-confirm-input');
+
+      const userId = idInput ? idInput.value : '';
+      const password = pwInput ? pwInput.value : '';
+
+      if (authUiMode === 'register') {
+        const confirmPw = pwConfirmInput ? pwConfirmInput.value : '';
+        if (password !== confirmPw) {
+          showAuthModalError('비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+          showToast('비밀번호 확인이 일치하지 않습니다.', 'amber');
+          return;
+        }
+        const result = registerAccount(userId, password, true);
+        if (!result.ok) {
+          showAuthModalError(result.message);
+          return;
+        }
+      } else {
+        const result = loginAccount(userId, password);
+        if (!result.ok) {
+          showAuthModalError(result.message);
+          return;
+        }
+      }
+
+      // 로그인한 계정의 전용 도화지 데이터 로드 및 화면 갱신
+      loadCurrentAccountCanvasData();
+      syncAuthScreenState();
+    }
+
+    // [3단계 함수 업데이트] 로그아웃 시 도화지 메모리를 비우고 로그인 화면으로 전환
+    function handleUserLogout() {
+      closeArtistPalette();
+      closeGridNotePopover();
+      closeAccountManageModal();
+      logoutAccount();
+      loadCurrentAccountCanvasData();
+      syncAuthScreenState();
+    }
+
+    /**
+     * 4. 비밀번호 변경 핵심 함수
+     */
+    function changeAccountPassword(currentPassword, newPassword) {
+      const uid = accountStore.currentUserId;
+      if (!uid || !accountStore.accounts[uid]) {
+        showToast('로그인 상태가 아닙니다.', 'amber');
+        return { ok: false, message: '로그인 상태가 아닙니다.' };
+      }
+
+      const acc = accountStore.accounts[uid];
+      if (acc.passwordHash !== encodePasswordHash(currentPassword)) {
+        const msg = '현재 비밀번호가 일치하지 않습니다.';
+        showToast(msg, 'amber');
+        return { ok: false, message: msg };
+      }
+
+      if (!newPassword || String(newPassword).length < 4) {
+        const msg = '새 비밀번호는 최소 4자 이상이어야 합니다.';
+        showToast(msg, 'amber');
+        return { ok: false, message: msg };
+      }
+
+      acc.passwordHash = encodePasswordHash(newPassword);
+      saveAccountStore();
+      showToast('🔐 비밀번호가 안전하게 변경되었습니다.', 'emerald');
+      return { ok: true, message: '비밀번호가 변경되었습니다.' };
+    }
+
+    /**
+     * 5. 계정 및 전용 도화지 데이터 영구 삭제 함수
+     */
+    function deleteCurrentAccount(currentPassword) {
+      const uid = accountStore.currentUserId;
+      if (!uid || !accountStore.accounts[uid]) {
+        showToast('로그인 상태가 아닙니다.', 'amber');
+        return { ok: false, message: '로그인 상태가 아닙니다.' };
+      }
+
+      const acc = accountStore.accounts[uid];
+      if (acc.passwordHash !== encodePasswordHash(currentPassword)) {
+        const msg = '비밀번호가 일치하지 않아 계정을 삭제할 수 없습니다.';
+        showToast(msg, 'amber');
+        return { ok: false, message: msg };
+      }
+
+      // 1) 해당 계정의 전용 도화지 데이터 삭제
+      const userCanvasKey = getActiveCanvasStorageKey();
+      localStorage.removeItem(userCanvasKey);
+
+      // 2) 계정 목록에서 제거 및 저장
+      delete accountStore.accounts[uid];
+      saveAccountStore();
+
+      // 3) 세션 종료 및 런타임 메모리 초기화
+      accountStore.currentUserId = null;
+      saveCurrentSession();
+      loadCurrentAccountCanvasData();
+
+      showToast(`🗑️ [${uid}] 계정과 도화지 데이터가 모두 삭제되었습니다.`, 'stone');
+      return { ok: true };
+    }
+
+    // 계정 관리 모달 열기 / 닫기
+    function openAccountManageModal() {
+      const uid = accountStore.currentUserId;
+      if (!uid || !accountStore.accounts[uid]) return;
+
+      const acc = accountStore.accounts[uid];
+      const recordedDaysCount = Object.keys(state.dayGrids || {}).filter(d =>
+        Array.isArray(state.dayGrids[d]) && state.dayGrids[d].some(Boolean)
+      ).length;
+
+      document.getElementById('manage-modal-user-id').textContent = uid;
+      document.getElementById('manage-modal-created-at').textContent = acc.createdAt
+        ? new Date(acc.createdAt).toLocaleDateString()
+        : '-';
+      document.getElementById('manage-modal-recorded-days').textContent = `${recordedDaysCount}일`;
+
+      document.getElementById('manage-current-pw').value = '';
+      document.getElementById('manage-new-pw').value = '';
+      document.getElementById('manage-new-pw-confirm').value = '';
+      document.getElementById('manage-delete-pw').value = '';
+
+      document.getElementById('account-manage-modal').classList.remove('hidden');
+    }
+
+    function closeAccountManageModal() {
+      const modal = document.getElementById('account-manage-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    // 비밀번호 변경 폼 제출 핸들러
+    function handleChangePasswordSubmit(event) {
+      if (event) event.preventDefault();
+      const curPw = document.getElementById('manage-current-pw').value;
+      const newPw = document.getElementById('manage-new-pw').value;
+      const confirmPw = document.getElementById('manage-new-pw-confirm').value;
+
+      if (newPw !== confirmPw) {
+        showToast('새 비밀번호와 확인 입력이 일치하지 않습니다.', 'amber');
+        return;
+      }
+
+      const res = changeAccountPassword(curPw, newPw);
+      if (res.ok) {
+        document.getElementById('manage-current-pw').value = '';
+        document.getElementById('manage-new-pw').value = '';
+        document.getElementById('manage-new-pw-confirm').value = '';
+      }
+    }
+
+    // 계정 삭제 폼 제출 핸들러
+    function handleDeleteAccountSubmit(event) {
+      if (event) event.preventDefault();
+      const uid = accountStore.currentUserId;
+      const pw = document.getElementById('manage-delete-pw').value;
+      if (!pw) {
+        showToast('계정을 삭제하려면 현재 비밀번호를 입력해주세요.', 'amber');
+        return;
+      }
+
+      const confirmed = window.confirm(
+        `정말 [${uid}] 계정을 삭제하시겠습니까?\n이 계정의 모든 도화지 기록이 영구 삭제되며 복구할 수 없습니다.`
+      );
+      if (!confirmed) return;
+
+      const res = deleteCurrentAccount(pw);
+      if (res.ok) {
+        closeAccountManageModal();
+        syncAuthScreenState();
+      }
+    }      
 
     /**
      * 물감 데이터 구조:
@@ -1384,7 +2130,11 @@
         if (parsed.simulatedQuarterMemory) state.simulatedQuarterMemory = parsed.simulatedQuarterMemory;
         state.updatedAt = parsed.updatedAt || Date.now();
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(getSerializablePayload()));
+        // [기존 코드]
+        // localStorage.setItem(STORAGE_KEY, JSON.stringify(getSerializablePayload()));
+
+        // [4단계 수정] 현재 로그인한 계정의 전용 키에 저장
+        localStorage.setItem(getActiveCanvasStorageKey(), JSON.stringify(getSerializablePayload()));
 
         const bInput = document.getElementById('birth-date-input');
         const eInput = document.getElementById('life-expectancy-input');
@@ -1410,7 +2160,11 @@
       try {
         const payload = getSerializablePayload();
         state.updatedAt = payload.updatedAt;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        // [기존 코드]
+        // localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+        // [4단계 수정] 현재 로그인한 계정의 전용 키에 저장
+        localStorage.setItem(getActiveCanvasStorageKey(), JSON.stringify(payload));
 
         const timeLabel = document.getElementById('modal-last-sync-time');
         if (timeLabel) {
@@ -1426,7 +2180,9 @@
 
     function loadState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('TIME_CANVAS_ATELIER_V1');
+        // [4단계 수정] 현재 로그인한 계정의 전용 저장소 키에서 데이터 로드
+        const activeKey = getActiveCanvasStorageKey();
+        const raw = localStorage.getItem(activeKey);
         if (!raw) {
           syncAllPaintsToArchive();
           return false;
@@ -6890,6 +7646,7 @@
 
     // 키보드 단축키: Ctrl+Z = 되돌리기, Ctrl+Y / Ctrl+Shift+Z = 다시 실행, P = 원형 팔레트, E = 지우개, ESC = 닫기
     window.addEventListener('keydown', (e) => {
+      if (!accountStore.currentUserId) return; // [3단계 추가] 로그인 전 단축키 비활성화
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
 
       if ((e.ctrlKey || e.metaKey) && !e.altKey) {
@@ -6923,6 +7680,8 @@
     });
 
     window.onload = function () {
+      initAccountStore(); // [1단계 추가] 계정 저장소 및 세션 초기화
+      syncAuthScreenState(); // [3단계 추가] 비로그인 상태면 로그인 화면을 먼저 표시
       loadSyncSettings();
       const hasSaved = loadState();
 
